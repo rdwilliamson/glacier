@@ -6,6 +6,7 @@ import (
 	"github.com/rdwilliamson/aws"
 	// "github.com/rdwilliamson/aws/glacier"
 	"../aws/glacier"
+	"os"
 )
 
 // $ glacier us-east-1 (vault|archive|etc)
@@ -22,14 +23,14 @@ func main() {
 	secret, access := aws.KeysFromEnviroment()
 	if secret == "" || access == "" {
 		fmt.Println("could not get keys")
-		return
+		os.Exit(1)
 	}
 
 	// connection to region
 	if flag.NArg() < 1 {
 		// TODO print usage
 		fmt.Println("no region argument")
-		return
+		os.Exit(1)
 	}
 	var region *aws.Region
 	for _, v := range aws.Regions {
@@ -40,7 +41,7 @@ func main() {
 	}
 	if region == nil {
 		fmt.Println("could not find region:", flag.Arg(0))
-		return
+		os.Exit(1)
 	}
 	connection = glacier.NewConnection(secret, access, region)
 

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 // $ glacier us-east-1 vault create <name>
@@ -19,7 +20,7 @@ func vault() {
 		_, vaults, err := connection.ListVaults(0, "")
 		if err != nil {
 			fmt.Println(err)
-			return
+			os.Exit(1)
 		}
 		fmt.Printf("%+v\n", vaults)
 	default:
