@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	// "github.com/rdwilliamson/aws/glacier"
+	"../aws/glacier"
 	"os"
 )
 
@@ -10,7 +12,7 @@ import (
 // $ glacier us-east-1 vault delete <name>
 // $ glacier us-east-1 vault describe <name>
 // $ glacier us-east-1 vault list
-// $ glacier us-east-1 vault notification set <name> [options]
+// $ glacier us-east-1 vault notification set <name> <topic>
 // $ glacier us-east-1 vault notification get <name>
 // $ glacier us-east-1 vault notification delete <name>
 
@@ -42,15 +44,34 @@ func vault() {
 			os.Exit(1)
 		}
 		fmt.Printf("%+v\n", vaults)
-	case "notification":
+	case "notifications":
 		if flag.NArg() < 5 {
 			fmt.Println("no notification command")
 			os.Exit(1)
 		}
 		switch flag.Arg(3) {
 		case "set":
+			notifications := glacier.Notifications{[]string{
+				"ArchiveRetrievalCompleted", "InventoryRetrievalCompleted"},
+				flag.Arg(5)}
+			err := connection.SetVaultNotifications(flag.Arg(4), notifications)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		case "get":
+			notifications, err := connection.GetVaultNotifications(flag.Arg(4))
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			fmt.Printf("%+v\n", notifications)
 		case "delete":
+			err := connection.DeleteVaultNotifications(flag.Arg(4))
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		default:
 			fmt.Println("unknown notification command:", flag.Arg(3))
 			os.Exit(1)
