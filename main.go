@@ -51,6 +51,8 @@ func main() {
 	switch flag.Arg(1) {
 	case "vault":
 		vault()
+	case "multipart":
+		multipart()
 	default:
 		fmt.Println("unknown command:", flag.Arg(1))
 	}
