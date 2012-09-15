@@ -51,6 +51,8 @@ func main() {
 	switch flag.Arg(1) {
 	case "vault":
 		vault()
+	case "archive":
+		archive()
 	case "multipart":
 		multipart()
 	default:
