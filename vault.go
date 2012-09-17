@@ -12,9 +12,9 @@ import (
 // $ glacier us-east-1 vault delete <name>
 // $ glacier us-east-1 vault describe <name>
 // $ glacier us-east-1 vault list
-// $ glacier us-east-1 vault notification set <name> <topic>
-// $ glacier us-east-1 vault notification get <name>
-// $ glacier us-east-1 vault notification delete <name>
+// $ glacier us-east-1 vault notifications set <name> <topic>
+// $ glacier us-east-1 vault notifications get <name>
+// $ glacier us-east-1 vault notifications delete <name>
 
 func vault() {
 	switch flag.Arg(2) {

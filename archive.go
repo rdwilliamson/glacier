@@ -6,6 +6,9 @@ import (
 	"os"
 )
 
+// $ glacier us-east-1 archive upload <description> <file> <vault>
+// $ glacier us-east-1 archive delete ...
+
 func archive() {
 	switch flag.Arg(2) {
 	case "upload":
@@ -22,7 +25,10 @@ func archive() {
 		}
 		fmt.Println(location)
 	case "delete":
+		fmt.Println("not implemented")
+		os.Exit(1)
 	default:
 		fmt.Println("unknown archive command:", flag.Arg(2))
+		os.Exit(1)
 	}
 }
