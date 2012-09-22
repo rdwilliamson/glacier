@@ -13,6 +13,7 @@ import (
 
 var (
 	connection *glacier.Connection
+	command    string
 )
 
 func main() {
@@ -27,34 +28,38 @@ func main() {
 	}
 
 	// connection to region
-	if flag.NArg() < 1 {
+	args := flag.Args()
+	if len(args) < 1 {
 		// TODO print usage
 		fmt.Println("no region argument")
 		os.Exit(1)
 	}
+
 	var region *aws.Region
 	for _, v := range aws.Regions {
-		if v.Name == flag.Arg(0) {
+		if v.Name == args[0] {
 			region = v
 			break
 		}
 	}
 	if region == nil {
-		fmt.Println("could not find region:", flag.Arg(0))
+		fmt.Println("could not find region:", args[0])
 		os.Exit(1)
 	}
+	args = args[1:]
 	connection = glacier.NewConnection(secret, access, region)
 
-	if flag.NArg() < 2 {
+	if len(args) < 1 {
 		fmt.Println("no command argument")
+		os.Exit(1)
 	}
-	switch flag.Arg(1) {
+	switch args[0] {
 	case "vault":
-		vault()
+		vault(args[1:])
 	case "archive":
-		archive()
+		archive(args[1:])
 	case "multipart":
-		multipart()
+		multipart(args[1:])
 	default:
 		fmt.Println("unknown command:", flag.Arg(1))
 	}

@@ -2,52 +2,40 @@ package main
 
 import (
 	"../aws/glacier"
-	"flag"
 	"fmt"
 	"io"
 	"os"
 )
 
-// $ glacier us-east-1 archive multipart upload <description> <file> <vault>
+// $ glacier us-east-1 archive multipart upload <vault> <file> <description>
 
-func multipart() {
-	switch flag.Arg(2) {
-	case "create":
-		in, err := os.Open(flag.Arg(3))
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer in.Close()
+func multipart(args []string) {
+	if len(args) < 1 {
+		fmt.Println("no multipart command")
+		os.Exit(1)
+	}
+	command := args[0]
+	args = args[1:]
 
-		out, err := os.Create(flag.Arg(4))
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer out.Close()
-
-		err = glacier.CreateTreeHash(in, out)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	case "read":
-		in, err := os.Open(flag.Arg(3))
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer in.Close()
-
-		err = glacier.ReadTreeHash(in)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+	switch command {
+	case "create", "read":
+		fmt.Println("not implemented")
+		os.Exit(1)
 	case "upload":
-		fileName := flag.Arg(4)
-		file, err := os.Open(fileName)
+		if len(args) < 2 {
+			fmt.Println("no vault and/or file")
+			os.Exit(1)
+		}
+		vault := args[0]
+		filename := args[1]
+		var description string
+		if len(args) > 2 {
+			description = args[2]
+		} else {
+			description = filename
+		}
+
+		file, err := os.Open(filename)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -55,14 +43,12 @@ func multipart() {
 		defer file.Close()
 
 		size := uint(1024 * 1024)
-		vault := flag.Arg(3)
-		uploadId, err := connection.InitiateMultipart(vault, size, fileName)
+		uploadId, err := connection.InitiateMultipart(vault, size, description)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// hasher := sha256.New()
 		buffer := make([]byte, size)
 		at := uint(0)
 		var n int
@@ -72,7 +58,6 @@ func multipart() {
 			if n == 0 {
 				break
 			}
-			// hasher.Write(buffer)
 			err = connection.UploadMultipart(vault, uploadId, at, buffer[:n])
 			fmt.Println("upload error", err)
 			if err != nil {
@@ -113,7 +98,7 @@ func multipart() {
 
 		fmt.Println(location)
 	default:
-		fmt.Println("unknown multipart command:", flag.Arg(2))
+		fmt.Println("unknown multipart command:", command)
 		os.Exit(1)
 	}
 }
