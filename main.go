@@ -60,6 +60,8 @@ func main() {
 		archive(args[1:])
 	case "multipart":
 		multipart(args[1:])
+	case "job":
+		job(args[1:])
 	default:
 		fmt.Println("unknown command:", flag.Arg(1))
 	}
