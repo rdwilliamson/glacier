@@ -6,7 +6,7 @@ import (
 )
 
 // $ glacier us-east-1 archive upload <vault> <file> <description>
-// $ glacier us-east-1 archive delete ...
+// $ glacier us-east-1 archive delete <vault> <archive>
 
 func archive(args []string) {
 	if len(args) < 1 {
@@ -43,8 +43,18 @@ func archive(args []string) {
 		}
 		fmt.Println(location)
 	case "delete":
-		fmt.Println("not implemented")
-		os.Exit(1)
+		if len(args) < 2 {
+			fmt.Println("no vault and/or archive")
+			os.Exit(1)
+		}
+		vault := args[0]
+		archive := args[1]
+
+		err := connection.DeleteArchive(vault, archive)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Println("unknown archive command:", command)
 		os.Exit(1)
