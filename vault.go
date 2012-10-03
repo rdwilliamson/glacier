@@ -24,11 +24,11 @@ func vault(args []string) {
 	args = args[1:]
 	switch command {
 	case "create", "delete", "describe":
-		if len(args) < 2 {
+		if len(args) < 1 {
 			fmt.Println("no vault name")
 			os.Exit(1)
 		}
-		name := args[1]
+		name := args[0]
 
 		switch command {
 		case "create":
