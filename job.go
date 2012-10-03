@@ -9,6 +9,7 @@ import (
 // $ glacier us-east-1 job inventory <vault> <description> <topic>
 // $ glacier us-east-1 job archive <vault> <archive> <description> <topic>
 // $ glacier us-east-1 job list <vault>
+// $ glacier us-east-1 job describe <vault> <job>
 // $ glacier us-east-1 job get inventory <vault> <job>
 // $ glacier us-east-1 job get archive <vault> <job> <file>
 
@@ -83,6 +84,22 @@ func job(args []string) {
 		}
 
 		fmt.Printf("%+v\n", jobs)
+
+	case "describe":
+		if len(args) < 2 {
+			fmt.Println("no vault and/or job id")
+			os.Exit(1)
+		}
+		vault := args[0]
+		jobId := args[1]
+
+		job, err := connection.DescribeJob(vault, jobId)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Printf("%+v\n", *job)
+
 	case "get":
 		if len(args) < 1 {
 			fmt.Println("no job sub command")

@@ -42,6 +42,7 @@ func archive(args []string) {
 			os.Exit(1)
 		}
 		fmt.Println(location)
+
 	case "delete":
 		if len(args) < 2 {
 			fmt.Println("no vault and/or archive")
@@ -55,6 +56,7 @@ func archive(args []string) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
 	default:
 		fmt.Println("unknown archive command:", command)
 		os.Exit(1)

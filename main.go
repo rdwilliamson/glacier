@@ -4,20 +4,17 @@ import (
 	"flag"
 	"fmt"
 	"github.com/rdwilliamson/aws"
-	// "github.com/rdwilliamson/aws/glacier"
-	"../aws/glacier"
+	"github.com/rdwilliamson/aws/glacier"
 	"os"
 )
 
-// $ glacier us-east-1 (vault|archive|etc)
-
 var (
 	connection *glacier.Connection
-	command    string
 )
 
 func main() {
 	flag.Parse()
+	// TODO print usage
 
 	// get keys
 	// TODO other ways to supply them
@@ -30,7 +27,6 @@ func main() {
 	// connection to region
 	args := flag.Args()
 	if len(args) < 1 {
-		// TODO print usage
 		fmt.Println("no region argument")
 		os.Exit(1)
 	}
@@ -53,16 +49,21 @@ func main() {
 		fmt.Println("no command argument")
 		os.Exit(1)
 	}
-	switch args[0] {
+	command := args[0]
+	args = args[1:]
+
+	switch command {
 	case "vault":
-		vault(args[1:])
+		vault(args)
 	case "archive":
-		archive(args[1:])
+		archive(args)
 	case "multipart":
-		multipart(args[1:])
+		// behaves exactly the same as archive upload, just prints status every
+		// 1MiB and costs you more becuase of the multiple requests
+		multipart(args)
 	case "job":
-		job(args[1:])
+		job(args)
 	default:
-		fmt.Println("unknown command:", flag.Arg(1))
+		fmt.Println("unknown command:", command)
 	}
 }

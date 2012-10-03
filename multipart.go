@@ -1,8 +1,8 @@
 package main
 
 import (
-	"../aws/glacier"
 	"fmt"
+	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"os"
 )
@@ -21,6 +21,7 @@ func multipart(args []string) {
 	case "create", "read":
 		fmt.Println("not implemented")
 		os.Exit(1)
+
 	case "upload":
 		if len(args) < 2 {
 			fmt.Println("no vault and/or file")
@@ -97,6 +98,7 @@ func multipart(args []string) {
 		}
 
 		fmt.Println(location)
+
 	default:
 		fmt.Println("unknown multipart command:", command)
 		os.Exit(1)

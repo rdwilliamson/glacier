@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	// "github.com/rdwilliamson/aws/glacier"
-	"../aws/glacier"
+	"github.com/rdwilliamson/aws/glacier"
 	"os"
 )
 
@@ -37,12 +36,14 @@ func vault(args []string) {
 				fmt.Println(err)
 				os.Exit(1)
 			}
+
 		case "delete":
 			err := connection.DeleteVault(name)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
+
 		case "describe":
 			vault, err := connection.DescribeVault(name)
 			if err != nil {
@@ -51,6 +52,7 @@ func vault(args []string) {
 			}
 			fmt.Printf("%+v\n", vault)
 		}
+
 	case "list":
 		_, vaults, err := connection.ListVaults(0, "")
 		if err != nil {
@@ -58,6 +60,7 @@ func vault(args []string) {
 			os.Exit(1)
 		}
 		fmt.Printf("%+v\n", vaults)
+
 	case "notifications":
 		args = args[1:]
 		if len(args) < 2 {
@@ -83,6 +86,7 @@ func vault(args []string) {
 				fmt.Println(err)
 				os.Exit(1)
 			}
+
 		case "get":
 			notifications, err := connection.GetVaultNotifications(name)
 			if err != nil {
@@ -90,6 +94,7 @@ func vault(args []string) {
 				os.Exit(1)
 			}
 			fmt.Printf("%+v\n", notifications)
+
 		case "delete":
 			err := connection.DeleteVaultNotifications(name)
 			if err != nil {
