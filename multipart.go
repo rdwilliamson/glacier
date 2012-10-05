@@ -1,13 +1,32 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"os"
+	"strconv"
 )
 
 // $ glacier us-east-1 archive multipart upload <vault> <file> <description>
+
+// $ glacier us-east-1 archive multipart init <vault> <file> <size> <description>
+// $ glacier us-east-1 archive multipart print <file>
+
+type multipartData struct {
+	Vault    string
+	PartSize uint
+	FileName string
+	UploadId string
+	Parts    []multipartPart
+}
+
+type multipartPart struct {
+	Hash     string
+	TreeHash string
+	Uploaded bool
+}
 
 func multipart(args []string) {
 	if len(args) < 1 {
@@ -18,9 +37,101 @@ func multipart(args []string) {
 	args = args[1:]
 
 	switch command {
-	case "create", "read":
-		fmt.Println("not implemented")
-		os.Exit(1)
+	case "init":
+		var data multipartData
+
+		if len(args) < 3 {
+			fmt.Println("no vault, file name and/or part size")
+			os.Exit(1)
+		}
+		data.Vault = args[0]
+		data.FileName = args[1]
+		partSize, err := strconv.ParseUint(args[2], 10, 32)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		data.PartSize = uint(partSize) * 1024 * 1024
+		args = args[2:]
+
+		f, err := os.Open(data.FileName)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer f.Close()
+
+		s, _ := f.Stat()
+		parts := s.Size() / int64(data.PartSize)
+		if s.Size()%int64(data.PartSize) > 0 {
+			parts++
+		}
+		data.Parts = make([]multipartPart, parts)
+
+		// hash
+		th := glacier.NewTreeHash()
+		for i := range data.Parts {
+			_, err := io.CopyN(th, f, int64(data.PartSize))
+			if err != nil && err != io.EOF {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			th.Close()
+			data.Parts[i].Hash = th.Hash()
+			data.Parts[i].TreeHash = th.TreeHash()
+			th.Reset()
+
+			fmt.Println("hashed part", i+1, "/", len(data.Parts))
+		}
+
+		// generate upload id
+
+		out, err := os.Create(data.FileName + ".gob")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer out.Close()
+
+		enc := gob.NewEncoder(out)
+		err = enc.Encode(data)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+	case "print":
+		if len(args) < 1 {
+			fmt.Println("no file name")
+			os.Exit(1)
+		}
+		fileName := args[0]
+
+		f, err := os.Open(fileName + ".gob")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer f.Close()
+
+		dec := gob.NewDecoder(f)
+		var data multipartData
+		err = dec.Decode(&data)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Vault:", data.Vault)
+		fmt.Println("Part Size:", data.PartSize/1024/1024, "MiB")
+		fmt.Println("Upload ID:", data.UploadId)
+		uploaded := 0
+		for i := range data.Parts {
+			if data.Parts[i].Uploaded {
+				uploaded++
+			}
+		}
+		fmt.Println("Parts Uploaded", uploaded, "/", len(data.Parts))
 
 	case "upload":
 		if len(args) < 2 {
