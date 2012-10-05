@@ -13,13 +13,18 @@ import (
 
 // $ glacier us-east-1 archive multipart init <vault> <file> <size> <description>
 // $ glacier us-east-1 archive multipart print <file>
+// $ glacier us-east-1 archive multipart abort <file>
+// $ glacier us-east-1 archive multipart list parts <file>
+
+// $ glacier us-east-1 archive multipart list uploads <vault>
 
 type multipartData struct {
-	Vault    string
-	PartSize uint
-	FileName string
-	UploadId string
-	Parts    []multipartPart
+	Vault       string
+	Description string
+	PartSize    uint
+	FileName    string
+	UploadId    string
+	Parts       []multipartPart
 }
 
 type multipartPart struct {
@@ -53,6 +58,10 @@ func multipart(args []string) {
 		}
 		data.PartSize = uint(partSize) * 1024 * 1024
 		args = args[2:]
+
+		if len(args) > 1 {
+			data.Description = args[0]
+		}
 
 		f, err := os.Open(data.FileName)
 		if err != nil {
@@ -123,6 +132,7 @@ func multipart(args []string) {
 		}
 
 		fmt.Println("Vault:", data.Vault)
+		fmt.Println("Description:", data.Description)
 		fmt.Println("Part Size:", data.PartSize/1024/1024, "MiB")
 		fmt.Println("Upload ID:", data.UploadId)
 		uploaded := 0
