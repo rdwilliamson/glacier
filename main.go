@@ -4,7 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/rdwilliamson/aws"
-	"github.com/rdwilliamson/aws/glacier"
+	// "github.com/rdwilliamson/aws/glacier"
+	"../aws/glacier"
 	"os"
 )
 
