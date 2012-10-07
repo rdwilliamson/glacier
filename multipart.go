@@ -15,8 +15,6 @@ import (
 // $ glacier us-east-1 archive multipart abort <file>
 // $ glacier us-east-1 archive multipart list parts <file>
 
-// $ glacier us-east-1 archive multipart list uploads <vault>
-
 type multipartData struct {
 	Vault       string
 	Description string

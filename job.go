@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-// $ glacier us-east-1 job inventory <vault> <description> <topic>
-// $ glacier us-east-1 job archive <vault> <archive> <description> <topic>
+// $ glacier us-east-1 job inventory <vault> <topic> <description>
+// $ glacier us-east-1 job archive <vault> <archive> <topic> <description>
 // $ glacier us-east-1 job list <vault>
 // $ glacier us-east-1 job describe <vault> <job>
 // $ glacier us-east-1 job get inventory <vault> <job>
@@ -32,10 +32,10 @@ func job(args []string) {
 
 		var description, topic string
 		if len(args) > 0 {
-			description = args[0]
+			topic = args[0]
 		}
 		if len(args) > 1 {
-			topic = args[1]
+			description = args[1]
 		}
 
 		jobId, err := connection.InitiateInventoryJob(vault, topic, description)
@@ -56,14 +56,13 @@ func job(args []string) {
 
 		var description, topic string
 		if len(args) > 0 {
-			description = args[0]
+			topic = args[0]
 		}
 		if len(args) > 1 {
-			topic = args[1]
+			description = args[1]
 		}
 
-		jobId, err := connection.InitiateRetrievalJob(vault, archive,
-			topic, description)
+		jobId, err := connection.InitiateRetrievalJob(vault, archive, topic, description)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
