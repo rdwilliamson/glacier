@@ -3,8 +3,7 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
-	// "github.com/rdwilliamson/aws/glacier"
-	"../aws/glacier"
+	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"os"
 	"strconv"
