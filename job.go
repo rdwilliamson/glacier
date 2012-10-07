@@ -38,7 +38,7 @@ func job(args []string) {
 			topic = args[1]
 		}
 
-		jobId, err := connection.InitiateInventoryJob(vault, description, topic)
+		jobId, err := connection.InitiateInventoryJob(vault, topic, description)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -77,7 +77,7 @@ func job(args []string) {
 		}
 		vault := args[0]
 
-		jobs, _, err := connection.ListJobs(vault, "", "", "", "")
+		jobs, _, err := connection.ListJobs(vault, "", "", "", 0)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

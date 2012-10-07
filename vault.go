@@ -54,7 +54,7 @@ func vault(args []string) {
 		}
 
 	case "list":
-		_, vaults, err := connection.ListVaults(0, "")
+		vaults, _, err := connection.ListVaults("", 0)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -78,7 +78,7 @@ func vault(args []string) {
 				os.Exit(1)
 			}
 			topic := args[0]
-			notifications := glacier.Notifications{[]string{
+			notifications := &glacier.Notifications{[]string{
 				"ArchiveRetrievalCompleted", "InventoryRetrievalCompleted"},
 				topic}
 			err := connection.SetVaultNotifications(name, notifications)
