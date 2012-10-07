@@ -59,8 +59,6 @@ func main() {
 	case "archive":
 		archive(args)
 	case "multipart":
-		// behaves exactly the same as archive upload, just prints status every
-		// 1MiB and costs you more becuase of the multiple requests
 		multipart(args)
 	case "job":
 		job(args)

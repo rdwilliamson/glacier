@@ -10,11 +10,9 @@ import (
 	"strconv"
 )
 
-// $ glacier us-east-1 archive multipart upload <vault> <file> <description>
-
 // $ glacier us-east-1 archive multipart init <vault> <file> <size> <description>
 // $ glacier us-east-1 archive multipart print <file>
-// $ glacier us-east-1 archive multipart run <file>
+// $ glacier us-east-1 archive multipart run <file> <parts>
 // $ glacier us-east-1 archive multipart abort <file>
 // $ glacier us-east-1 archive multipart list parts <file>
 
@@ -27,12 +25,52 @@ type multipartData struct {
 	FileName    string
 	UploadId    string
 	Parts       []multipartPart
+	TreeHash    string
+	Size        uint
 }
 
 type multipartPart struct {
 	Hash     string
 	TreeHash string
 	Uploaded bool
+}
+
+type limitedReadSeeker struct {
+	R         io.ReadSeeker
+	N         int64
+	OriginalN int64
+}
+
+func (l *limitedReadSeeker) Read(p []byte) (n int, err error) {
+	if l.N <= 0 {
+		return 0, io.EOF
+	}
+	if int64(len(p)) > l.N {
+		p = p[0:l.N]
+	}
+	n, err = l.R.Read(p)
+	l.N -= int64(n)
+	return
+}
+
+func (l *limitedReadSeeker) Seek(offset int64, whence int) (ret int64, err error) {
+	switch whence {
+	case 0:
+		_, err := l.R.Seek(l.N-l.OriginalN+offset, 1)
+		l.N = l.OriginalN - offset
+		return offset, err
+	case 1:
+		// untested
+		_, err := l.R.Seek(offset, 1)
+		l.N -= offset
+		return l.OriginalN - l.N, err
+	case 2:
+		// untested
+		_, err := l.R.Seek(l.N-offset, 1)
+		l.N = offset
+		return l.OriginalN - l.N, err
+	}
+	panic("invalid whence")
 }
 
 func multipart(args []string) {
@@ -79,21 +117,25 @@ func multipart(args []string) {
 		}
 		data.Parts = make([]multipartPart, parts)
 
-		th := glacier.NewTreeHash()
+		partHasher := glacier.NewTreeHash()
+		wholeHasher := glacier.NewTreeHash()
+		hasher := io.MultiWriter(partHasher, wholeHasher)
 		for i := range data.Parts {
-			_, err := io.CopyN(th, f, int64(data.PartSize))
+			n, err := io.CopyN(hasher, f, int64(data.PartSize))
 			if err != nil && err != io.EOF {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			th.Close()
-			data.Parts[i].Hash = th.Hash()
-			data.Parts[i].TreeHash = th.TreeHash()
-			th.Reset()
+			data.Size += uint(n)
+			partHasher.Close()
+			data.Parts[i].Hash = partHasher.Hash()
+			data.Parts[i].TreeHash = partHasher.TreeHash()
+			partHasher.Reset()
 		}
+		wholeHasher.Close()
+		data.TreeHash = wholeHasher.TreeHash()
 
-		data.UploadId, err = connection.InitiateMultipart(data.Vault,
-			data.PartSize, data.Description)
+		data.UploadId, err = connection.InitiateMultipart(data.Vault, data.PartSize, data.Description)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -146,6 +188,8 @@ func multipart(args []string) {
 			}
 		}
 		fmt.Println("Parts Uploaded", uploaded, "/", len(data.Parts))
+		fmt.Println("Tree Hash:", data.TreeHash)
+		fmt.Println("Size:", data.Size)
 
 	case "run":
 		if len(args) < 2 {
@@ -183,9 +227,11 @@ func multipart(args []string) {
 		defer file.Close()
 
 		start := int64(0)
+		index := 0
 		for _, v := range data.Parts {
 			if v.Uploaded {
 				start += int64(data.PartSize)
+				index++
 			} else {
 				break
 			}
@@ -194,15 +240,77 @@ func multipart(args []string) {
 		if len(data.Parts) < parts {
 			parts = len(data.Parts)
 		}
+		if parts == 0 {
+			parts = len(data.Parts)
+		}
+
 		for i := 0; i < parts; i++ {
-			fmt.Println("uploading from", start, "to", uint(start)+data.PartSize)
+			if index >= len(data.Parts) {
+				break
+			}
+
 			_, err = file.Seek(start, 0)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 
+			body := &limitedReadSeeker{file, int64(data.PartSize), int64(data.PartSize)}
+
+			err = connection.UploadMultipart(data.Vault, data.UploadId, start, body)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			data.Parts[index].Uploaded = true
+			gobFile, err = os.Create(fileName + ".gob.new")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			enc := gob.NewEncoder(gobFile)
+			err = enc.Encode(data)
+			gobFile.Close()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			err = os.Remove(fileName + ".gob")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			err = os.Rename(fileName+".gob.new", fileName+".gob")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
 			start += int64(data.PartSize)
+			index++
+		}
+
+		done := true
+		for _, v := range data.Parts {
+			if !v.Uploaded {
+				done = false
+				break
+			}
+		}
+
+		if done {
+			archiveId, err := connection.CompleteMultipart(data.Vault, data.UploadId, data.TreeHash, data.Size)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			fmt.Println(archiveId)
+
+			err = os.Remove(fileName + ".gob")
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 
 	case "abort":
@@ -242,6 +350,34 @@ func multipart(args []string) {
 
 		switch subCommand {
 		case "parts":
+			if len(args) < 1 {
+				fmt.Println("no file")
+				os.Exit(1)
+			}
+			fileName := args[0]
+
+			f, err := os.Open(fileName + ".gob")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			defer f.Close()
+
+			dec := gob.NewDecoder(f)
+			var data multipartData
+			err = dec.Decode(&data)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			parts, err := connection.ListMultipartParts(data.Vault, data.UploadId, "", 0)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			fmt.Printf("%+v\n", *parts)
 
 		case "uploads":
 			if len(args) < 1 {
@@ -262,83 +398,6 @@ func multipart(args []string) {
 			fmt.Println("unknown multipart sub command:", subCommand)
 			os.Exit(1)
 		}
-
-	case "upload":
-		if len(args) < 2 {
-			fmt.Println("no vault and/or file")
-			os.Exit(1)
-		}
-		vault := args[0]
-		filename := args[1]
-		var description string
-		if len(args) > 2 {
-			description = args[2]
-		} else {
-			description = filename
-		}
-
-		file, err := os.Open(filename)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer file.Close()
-
-		size := uint(1024 * 1024)
-		uploadId, err := connection.InitiateMultipart(vault, size, description)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		buffer := make([]byte, size)
-		at := uint(0)
-		var n int
-		for err == nil {
-			n, err = file.Read(buffer)
-			fmt.Println("uploaded", at, "sending", n, "read error", err)
-			if n == 0 {
-				break
-			}
-			err = connection.UploadMultipart(vault, uploadId, at, buffer[:n])
-			fmt.Println("upload error", err)
-			if err != nil {
-				// TODO cancel multipart upload
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			at += uint(n)
-			fmt.Println("uploaded", at/1024/1024, "MiB so far...")
-		}
-		if err != io.EOF {
-			if err == nil {
-				fmt.Println("expecting EOF")
-			} else {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		}
-
-		_, err = file.Seek(0, 0)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		treeHash, _, err := glacier.GetTreeHash(file)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		fmt.Println("completing...")
-		location, err := connection.CompleteMultipart(vault, uploadId,
-			treeHash, at)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		fmt.Println(location)
 
 	default:
 		fmt.Println("unknown multipart command:", command)
