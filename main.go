@@ -6,6 +6,7 @@ import (
 	"github.com/rdwilliamson/aws"
 	"github.com/rdwilliamson/aws/glacier"
 	"os"
+	"runtime/pprof"
 )
 
 var (
@@ -13,8 +14,20 @@ var (
 )
 
 func main() {
+	cpu := flag.String("cpuprofile", "", "cpu profile file")
 	flag.Parse()
 	// TODO print usage
+
+	if *cpu != "" {
+		f, err := os.Create(*cpu)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	// get keys
 	// TODO other ways to supply them
