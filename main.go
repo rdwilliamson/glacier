@@ -104,3 +104,16 @@ glacier <region> vault notifications delete <name>`)
 		fmt.Println("unknown command:", command)
 	}
 }
+
+func prettySize(size uint64) string {
+	if size > 1024*1024*1024 {
+		return fmt.Sprintf("%.1fGiB", float32(size)/1024.0/1024.0/1024)
+	}
+	if size > 1024*1024 {
+		return fmt.Sprintf("%.1fMiB", float32(size)/1024.0/1024.0)
+	}
+	if size > 1024 {
+		return fmt.Sprintf("%.1fKiB", float32(size)/1024.0)
+	}
+	return fmt.Sprint(size)
+}
