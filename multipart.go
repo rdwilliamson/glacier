@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/rdwilliamson/aws/glacier"
 	"io"
+	"net"
 	"os"
 	"reflect"
 	"strconv"
@@ -242,6 +243,7 @@ func multipart(args []string) {
 			parts = len(data.Parts)
 		}
 
+		try := 0
 		for i := 0; i < parts; i++ {
 			if index >= len(data.Parts) {
 				break
@@ -258,10 +260,26 @@ func multipart(args []string) {
 			err = connection.UploadMultipart(data.Vault, data.UploadId, start, body)
 
 			if err != nil {
-				fmt.Println(reflect.TypeOf(err))
-				fmt.Println(err)
-				os.Exit(1)
+				switch err.(type) {
+				case *net.OpError:
+					opError := err.(*net.OpError)
+					fmt.Println("caught net.OpError")
+					fmt.Println("Error:", opError.Error())
+					fmt.Println("Temporary:", opError.Temporary())
+					fmt.Println("Timeout:", opError.Timeout())
+					if try++; try > retrys {
+						fmt.Println("too many retrys")
+						os.Exit(1)
+					}
+					continue
+				default:
+					fmt.Println(reflect.TypeOf(err))
+					fmt.Println(err)
+					os.Exit(1)
+				}
 			}
+
+			try = 0
 
 			data.Parts[index].Uploaded = true
 			gobFile, err = os.Create(fileName + ".gob.new")
