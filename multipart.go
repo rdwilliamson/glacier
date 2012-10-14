@@ -360,6 +360,12 @@ func multipart(args []string) {
 			os.Exit(1)
 		}
 
+		err = os.Remove(fileName + ".gob")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
 	case "list":
 		if len(args) < 1 {
 			fmt.Println("no multipart sub command")
