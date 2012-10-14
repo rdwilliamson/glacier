@@ -93,7 +93,7 @@ func job(args []string) {
 				fmt.Println("Completion Date:", v.CompletionDate)
 			}
 			fmt.Println("Creation Date:", v.CreationDate)
-			if v.Action == "InventoryRetrieval" { // only know size when completed?
+			if v.Completed && v.Action == "InventoryRetrieval" {
 				fmt.Println("Invenotry Size:", v.InventorySizeInBytes, prettySize(uint64(v.InventorySizeInBytes)))
 			}
 			fmt.Println("Job Description:", v.JobDescription)
@@ -132,7 +132,7 @@ func job(args []string) {
 			fmt.Println("Completion Date:", job.CompletionDate)
 		}
 		fmt.Println("Creation Date:", job.CreationDate)
-		if job.Action == "InventoryRetrieval" { // only know size when completed?
+		if job.Completed && job.Action == "InventoryRetrieval" {
 			fmt.Println("Invenotry Size:", job.InventorySizeInBytes, prettySize(uint64(job.InventorySizeInBytes)))
 		}
 		fmt.Println("Job Description:", job.JobDescription)
