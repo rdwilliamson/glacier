@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
+	"github.com/rdwilliamson/aws"
 	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"net"
@@ -283,6 +284,18 @@ func multipart(args []string) {
 						os.Exit(1)
 					}
 					continue
+				case *aws.Error:
+					awsError := err.(*aws.Error)
+					fmt.Println("caught aws.Error")
+					if awsError.Message == "Request timed out." {
+						if try++; try > retrys {
+							fmt.Println("too many retrys")
+							os.Exit(1)
+						}
+						continue
+					}
+					fmt.Println(err)
+					os.Exit(1)
 				default:
 					fmt.Println(reflect.TypeOf(err))
 					fmt.Println(err)
