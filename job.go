@@ -174,7 +174,7 @@ func job(args []string) {
 				fmt.Println("Archive ID:", v.ArchiveId)
 				fmt.Println("Archive Description:", v.ArchiveDescription)
 				fmt.Println("Creation Date:", v.CreationDate)
-				fmt.Println("Size:", v.Size)
+				fmt.Println("Size:", v.Size, prettySize(v.Size))
 				fmt.Println("SHA256 Tree Hash:", v.SHA256TreeHash)
 				fmt.Println()
 			}
