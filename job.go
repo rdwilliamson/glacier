@@ -82,7 +82,31 @@ func job(args []string) {
 			os.Exit(1)
 		}
 
-		fmt.Printf("%+v\n", jobs)
+		for _, v := range jobs {
+			fmt.Println("Action:", v.Action)
+			if v.Action == "ArchiveRetrieval" {
+				fmt.Println("Archive ID:", v.ArchiveId)
+				fmt.Println("Archive Size:", v.ArchiveSizeInBytes, prettySize(v.ArchiveSizeInBytes))
+			}
+			fmt.Println("Completed:", v.Completed)
+			if v.Completed {
+				fmt.Println("Completion Date:", v.CompletionDate)
+			}
+			fmt.Println("Creation Date:", v.CreationDate)
+			if v.Action == "InventoryRetrieval" { // only know size when completed?
+				fmt.Println("Invenotry Size:", v.InventorySizeInBytes, prettySize(uint64(v.InventorySizeInBytes)))
+			}
+			fmt.Println("Job Description:", v.JobDescription)
+			fmt.Println("Job ID:", v.JobId)
+			if v.Action == "ArchiveRetrieval" {
+				fmt.Println("SHA256 Tree Hash:", v.SHA256TreeHash)
+			}
+			fmt.Println("SNS Topic:", v.SNSTopic)
+			fmt.Println("Status Code:", v.StatusCode)
+			fmt.Println("Status Message:", v.StatusMessage)
+			fmt.Println("Vault ARN:", v.VaultARN)
+			fmt.Println()
+		}
 
 	case "describe":
 		if len(args) < 2 {
@@ -97,7 +121,29 @@ func job(args []string) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Printf("%+v\n", *job)
+
+		fmt.Println("Action:", job.Action)
+		if job.Action == "ArchiveRetrieval" {
+			fmt.Println("Archive ID:", job.ArchiveId)
+			fmt.Println("Archive Size:", job.ArchiveSizeInBytes, prettySize(job.ArchiveSizeInBytes))
+		}
+		fmt.Println("Completed:", job.Completed)
+		if job.Completed {
+			fmt.Println("Completion Date:", job.CompletionDate)
+		}
+		fmt.Println("Creation Date:", job.CreationDate)
+		if job.Action == "InventoryRetrieval" { // only know size when completed?
+			fmt.Println("Invenotry Size:", job.InventorySizeInBytes, prettySize(uint64(job.InventorySizeInBytes)))
+		}
+		fmt.Println("Job Description:", job.JobDescription)
+		fmt.Println("Job ID:", job.JobId)
+		if job.Action == "ArchiveRetrieval" {
+			fmt.Println("SHA256 Tree Hash:", job.SHA256TreeHash)
+		}
+		fmt.Println("SNS Topic:", job.SNSTopic)
+		fmt.Println("Status Code:", job.StatusCode)
+		fmt.Println("Status Message:", job.StatusMessage)
+		fmt.Println("Vault ARN:", job.VaultARN)
 
 	case "get":
 		if len(args) < 1 {
