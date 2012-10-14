@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"syscall"
 )
 
 // $ glacier us-east-1 multipart init <vault> <file> <size> <description>
@@ -268,6 +269,15 @@ func multipart(args []string) {
 					fmt.Println("Temporary:", opError.Temporary())
 					fmt.Println("Timeout:", opError.Timeout())
 					fmt.Println("Err", reflect.TypeOf(opError.Err))
+					switch opError.Err.(type) {
+					case syscall.Errno:
+						fmt.Println("caught syscall.Errno")
+						errno := opError.Err.(syscall.Errno)
+						fmt.Println("Error:", errno.Error())
+						fmt.Println("Temporary:", errno.Temporary())
+						fmt.Println("Timeout:", errno.Timeout())
+						fmt.Println("Errno:", int(errno))
+					}
 					if try++; try > retrys {
 						fmt.Println("too many retrys")
 						os.Exit(1)
