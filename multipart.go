@@ -25,7 +25,7 @@ type multipartData struct {
 	UploadId    string
 	Parts       []multipartPart
 	TreeHash    string
-	Size        uint
+	Size        uint64
 }
 
 type multipartPart struct {
@@ -125,7 +125,7 @@ func multipart(args []string) {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			data.Size += uint(n)
+			data.Size += uint64(n)
 			partHasher.Close()
 			data.Parts[i].Hash = partHasher.Hash()
 			data.Parts[i].TreeHash = partHasher.TreeHash()
@@ -178,7 +178,7 @@ func multipart(args []string) {
 
 		fmt.Println("Vault:", data.Vault)
 		fmt.Println("Description:", data.Description)
-		fmt.Println("Part Size:", data.PartSize/1024/1024, "MiB")
+		fmt.Printf("Part Size: %dMiB\n", data.PartSize/1024/1024)
 		fmt.Println("Upload ID:", data.UploadId)
 		uploaded := 0
 		for i := range data.Parts {
@@ -188,7 +188,7 @@ func multipart(args []string) {
 		}
 		fmt.Println("Parts Uploaded", uploaded, "/", len(data.Parts))
 		fmt.Println("Tree Hash:", data.TreeHash)
-		fmt.Println("Size:", data.Size)
+		fmt.Println("Size:", data.Size, prettySize(data.Size))
 
 	case "run":
 		if len(args) < 2 {
@@ -225,11 +225,11 @@ func multipart(args []string) {
 		}
 		defer file.Close()
 
-		start := int64(0)
+		start := uint64(0)
 		index := 0
 		for _, v := range data.Parts {
 			if v.Uploaded {
-				start += int64(data.PartSize)
+				start += uint64(data.PartSize)
 				index++
 			} else {
 				break
@@ -249,7 +249,7 @@ func multipart(args []string) {
 				break
 			}
 
-			_, err = file.Seek(start, 0)
+			_, err = file.Seek(int64(start), 0)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -305,7 +305,7 @@ func multipart(args []string) {
 				os.Exit(1)
 			}
 
-			start += int64(data.PartSize)
+			start += uint64(data.PartSize)
 			index++
 		}
 
