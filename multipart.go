@@ -10,11 +10,11 @@ import (
 	"strconv"
 )
 
-// $ glacier us-east-1 archive multipart init <vault> <file> <size> <description>
-// $ glacier us-east-1 archive multipart print <file>
-// $ glacier us-east-1 archive multipart run <file> <parts>
-// $ glacier us-east-1 archive multipart abort <file>
-// $ glacier us-east-1 archive multipart list parts <file>
+// $ glacier us-east-1 multipart init <vault> <file> <size> <description>
+// $ glacier us-east-1 multipart print <file>
+// $ glacier us-east-1 multipart run <file> <parts>
+// $ glacier us-east-1 multipart abort <file>
+// $ glacier us-east-1 multipart list parts <file>
 
 type multipartData struct {
 	Vault       string

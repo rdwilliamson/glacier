@@ -17,8 +17,32 @@ var (
 func main() {
 	flag.IntVar(&retrys, "retrys", 3, "number of retrys when uploading multipart part")
 	cpu := flag.String("cpuprofile", "", "cpu profile file")
+	help := flag.Bool("help", false, "print usage")
 	flag.Parse()
-	// TODO print usage
+
+	if *help {
+		fmt.Println(`glacier <region> archive upload <vault> <file> <description>
+glacier <region> archive delete <vault> <archive>
+glacier <region> job inventory <vault> <topic> <description>
+glacier <region> job archive <vault> <archive> <topic> <description>
+glacier <region> job list <vault>
+glacier <region> job describe <vault> <job>
+glacier <region> job get inventory <vault> <job>
+glacier <region> job get archive <vault> <job> <file>
+glacier <region> multipart init <vault> <file> <size> <description>
+glacier <region> multipart print <file>
+glacier <region> multipart run <file> <parts>
+glacier <region> multipart abort <file>
+glacier <region> multipart list parts <file>
+glacier <region> vault create <name>
+glacier <region> vault delete <name>
+glacier <region> vault describe <name>
+glacier <region> vault list
+glacier <region> vault notifications set <name> <topic>
+glacier <region> vault notifications get <name>
+glacier <region> vault notifications delete <name>`)
+		return
+	}
 
 	if *cpu != "" {
 		f, err := os.Create(*cpu)
