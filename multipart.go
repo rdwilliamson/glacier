@@ -267,6 +267,7 @@ func multipart(args []string) {
 					fmt.Println("Error:", opError.Error())
 					fmt.Println("Temporary:", opError.Temporary())
 					fmt.Println("Timeout:", opError.Timeout())
+					fmt.Println("Err", reflect.TypeOf(opError.Err))
 					if try++; try > retrys {
 						fmt.Println("too many retrys")
 						os.Exit(1)
