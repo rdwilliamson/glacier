@@ -59,7 +59,16 @@ func vault(args []string) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Printf("%+v\n", vaults)
+
+		for _, v := range vaults {
+			fmt.Println("Vault Name:", v.VaultName)
+			fmt.Println("Vault ARN:", v.VaultARN)
+			fmt.Println("Creation Date:", v.CreationDate)
+			fmt.Println("Archives;", v.NumberOfArchives)
+			fmt.Println("Size:", v.SizeInBytes, prettySize(v.SizeInBytes))
+			fmt.Println("Last Inventory Date:", v.LastInventoryDate)
+			fmt.Println()
+		}
 
 	case "notifications":
 		args = args[1:]

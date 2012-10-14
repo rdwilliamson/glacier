@@ -134,6 +134,7 @@ func job(args []string) {
 			}
 
 		case "archive":
+			// TODO retrieve parts and handle errors
 			if len(args) < 3 {
 				fmt.Println("no vault, job id, and/or output file")
 				os.Exit(1)
