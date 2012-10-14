@@ -10,9 +10,11 @@ import (
 
 var (
 	connection *glacier.Connection
+	retrys     int
 )
 
 func main() {
+	flag.IntVar(&retrys, "retrys", 3, "number of retrys when uploading multipart part")
 	flag.Parse()
 	// TODO print usage
 

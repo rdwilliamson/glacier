@@ -6,6 +6,7 @@ import (
 	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"os"
+	"reflect"
 	"strconv"
 )
 
@@ -255,7 +256,9 @@ func multipart(args []string) {
 			body := &limitedReadSeeker{file, int64(data.PartSize), int64(data.PartSize)}
 
 			err = connection.UploadMultipart(data.Vault, data.UploadId, start, body)
+
 			if err != nil {
+				fmt.Println(reflect.TypeOf(err))
 				fmt.Println(err)
 				os.Exit(1)
 			}
