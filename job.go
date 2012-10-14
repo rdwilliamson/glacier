@@ -170,13 +170,14 @@ func job(args []string) {
 
 			fmt.Println("Vault ARN:", inventory.VaultARN)
 			fmt.Println("Inventory Date:", inventory.InventoryDate)
+
 			for _, v := range inventory.ArchiveList {
+				fmt.Println()
 				fmt.Println("Archive ID:", v.ArchiveId)
 				fmt.Println("Archive Description:", v.ArchiveDescription)
 				fmt.Println("Creation Date:", v.CreationDate)
 				fmt.Println("Size:", v.Size, prettySize(v.Size))
 				fmt.Println("SHA256 Tree Hash:", v.SHA256TreeHash)
-				fmt.Println()
 			}
 
 		case "archive":
