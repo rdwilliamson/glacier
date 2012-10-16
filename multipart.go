@@ -294,6 +294,13 @@ func multipart(args []string) {
 						}
 						continue
 					}
+					if awsError.Message == "An error has occurred and the request cannot be processed." {
+						if try++; try > retrys {
+							fmt.Println("too many retrys")
+							os.Exit(1)
+						}
+						continue
+					}
 					fmt.Println(err)
 					os.Exit(1)
 				default:
