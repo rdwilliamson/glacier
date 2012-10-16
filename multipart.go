@@ -262,21 +262,13 @@ func multipart(args []string) {
 			err = connection.UploadMultipart(data.Vault, data.UploadId, start, body)
 
 			if err != nil {
+				fmt.Println(err)
 				switch err.(type) {
 				case *net.OpError:
 					opError := err.(*net.OpError)
-					fmt.Println("caught net.OpError")
-					fmt.Println("Error:", opError.Error())
-					fmt.Println("Temporary:", opError.Temporary())
-					fmt.Println("Timeout:", opError.Timeout())
-					fmt.Println("Err", reflect.TypeOf(opError.Err))
 					switch opError.Err.(type) {
 					case syscall.Errno:
-						fmt.Println("caught syscall.Errno")
 						errno := opError.Err.(syscall.Errno)
-						fmt.Println("Error:", errno.Error())
-						fmt.Println("Temporary:", errno.Temporary())
-						fmt.Println("Timeout:", errno.Timeout())
 						fmt.Println("Errno:", int(errno))
 					}
 					if try++; try > retrys {
@@ -286,7 +278,6 @@ func multipart(args []string) {
 					continue
 				case *aws.Error:
 					awsError := err.(*aws.Error)
-					fmt.Println("caught aws.Error")
 					if awsError.Message == "Request timed out." {
 						if try++; try > retrys {
 							fmt.Println("too many retrys")
@@ -305,7 +296,6 @@ func multipart(args []string) {
 					os.Exit(1)
 				default:
 					fmt.Println(reflect.TypeOf(err))
-					fmt.Println(err)
 					os.Exit(1)
 				}
 			}
