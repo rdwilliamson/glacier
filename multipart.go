@@ -241,13 +241,11 @@ func multipart(args []string) {
 			parts = len(data.Parts)
 		}
 
-		try := 0
-		for i := 0; i < parts; i++ {
+		i, try := 0, 0
+		for i < parts {
 			if index >= len(data.Parts) {
 				break
 			}
-
-			fmt.Println("part", i)
 
 			_, err = file.Seek(int64(start), 0)
 			if err != nil {
@@ -268,6 +266,7 @@ func multipart(args []string) {
 				continue
 			}
 
+			i++
 			try = 0
 
 			data.Parts[index].Uploaded = true
@@ -307,8 +306,6 @@ func multipart(args []string) {
 		}
 
 		if done {
-			fmt.Println("done")
-
 			archiveId, err := connection.CompleteMultipart(data.Vault, data.UploadId, data.TreeHash, data.Size)
 			if err != nil {
 				fmt.Println(err)
@@ -321,8 +318,6 @@ func multipart(args []string) {
 				fmt.Println(err)
 			}
 		}
-
-		fmt.Println("exiting")
 
 	case "abort":
 		if len(args) < 1 {
