@@ -3,14 +3,10 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/rdwilliamson/aws"
 	"github.com/rdwilliamson/aws/glacier"
 	"io"
-	"net"
 	"os"
-	"reflect"
 	"strconv"
-	"syscall"
 )
 
 // $ glacier us-east-1 multipart init <vault> <file> <size> <description>
@@ -251,6 +247,8 @@ func multipart(args []string) {
 				break
 			}
 
+			fmt.Println("part", i)
+
 			_, err = file.Seek(int64(start), 0)
 			if err != nil {
 				fmt.Println(err)
@@ -263,42 +261,11 @@ func multipart(args []string) {
 
 			if err != nil {
 				fmt.Println(err)
-				switch err.(type) {
-				case *net.OpError:
-					opError := err.(*net.OpError)
-					switch opError.Err.(type) {
-					case syscall.Errno:
-						errno := opError.Err.(syscall.Errno)
-						fmt.Println("Errno:", int(errno))
-					}
-					if try++; try > retrys {
-						fmt.Println("too many retrys")
-						os.Exit(1)
-					}
-					continue
-				case *aws.Error:
-					awsError := err.(*aws.Error)
-					if awsError.Message == "Request timed out." {
-						if try++; try > retrys {
-							fmt.Println("too many retrys")
-							os.Exit(1)
-						}
-						continue
-					}
-					if awsError.Message == "An error has occurred and the request cannot be processed." {
-						if try++; try > retrys {
-							fmt.Println("too many retrys")
-							os.Exit(1)
-						}
-						continue
-					}
-					fmt.Println(awsError.Message)
-					fmt.Println(err)
-					os.Exit(1)
-				default:
-					fmt.Println(reflect.TypeOf(err))
+				if try++; try > retrys {
+					fmt.Println("too many retrys")
 					os.Exit(1)
 				}
+				continue
 			}
 
 			try = 0
@@ -340,6 +307,8 @@ func multipart(args []string) {
 		}
 
 		if done {
+			fmt.Println("done")
+
 			archiveId, err := connection.CompleteMultipart(data.Vault, data.UploadId, data.TreeHash, data.Size)
 			if err != nil {
 				fmt.Println(err)
@@ -352,6 +321,8 @@ func multipart(args []string) {
 				fmt.Println(err)
 			}
 		}
+
+		fmt.Println("exiting")
 
 	case "abort":
 		if len(args) < 1 {
