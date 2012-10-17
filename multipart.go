@@ -292,6 +292,7 @@ func multipart(args []string) {
 						}
 						continue
 					}
+					fmt.Println(awsError.Message)
 					fmt.Println(err)
 					os.Exit(1)
 				default:
