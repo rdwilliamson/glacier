@@ -71,7 +71,6 @@ func vault(args []string) {
 		}
 
 	case "notifications":
-		args = args[1:]
 		if len(args) < 2 {
 			fmt.Println("no notification command or no vault name")
 			os.Exit(1)
