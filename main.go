@@ -55,34 +55,8 @@ glacier <region> vault notifications delete <name>`)
 		defer pprof.StopCPUProfile()
 	}
 
-	// get keys
-	// TODO other ways to supply them
-	secret, access := aws.KeysFromEnviroment()
-	if secret == "" || access == "" {
-		fmt.Println("could not get keys")
-		os.Exit(1)
-	}
-
-	// connection to region
 	args := flag.Args()
-	if len(args) < 1 {
-		fmt.Println("no region argument")
-		os.Exit(1)
-	}
-
-	var region *aws.Region
-	for _, v := range aws.Regions {
-		if v.Name == args[0] {
-			region = v
-			break
-		}
-	}
-	if region == nil {
-		fmt.Println("could not find region:", args[0])
-		os.Exit(1)
-	}
-	args = args[1:]
-	connection = glacier.NewConnection(secret, access, region)
+	args = getConnection(args)
 
 	if len(args) < 1 {
 		fmt.Println("no command argument")
@@ -107,13 +81,42 @@ glacier <region> vault notifications delete <name>`)
 
 func prettySize(size uint64) string {
 	if size > 1024*1024*1024 {
-		return fmt.Sprintf("%.1fGiB", float32(size)/1024.0/1024.0/1024)
+		return fmt.Sprintf("%.1f GiB", float32(size)/1024.0/1024.0/1024.0)
 	}
 	if size > 1024*1024 {
-		return fmt.Sprintf("%.1fMiB", float32(size)/1024.0/1024.0)
+		return fmt.Sprintf("%.1f MiB", float32(size)/1024.0/1024.0)
 	}
 	if size > 1024 {
-		return fmt.Sprintf("%.1fKiB", float32(size)/1024.0)
+		return fmt.Sprintf("%.1f KiB", float32(size)/1024.0)
 	}
 	return fmt.Sprint(size)
+}
+
+func getConnection(args []string) []string {
+	// TODO other ways to supply them
+	secret, access := aws.KeysFromEnviroment()
+	if secret == "" || access == "" {
+		fmt.Println("could not get keys")
+		os.Exit(1)
+	}
+
+	if len(args) < 1 {
+		fmt.Println("no region argument")
+		os.Exit(1)
+	}
+	var region *aws.Region
+	for _, v := range aws.Regions {
+		if v.Name == args[0] {
+			region = v
+			break
+		}
+	}
+	if region == nil {
+		fmt.Println("could not find region:", args[0])
+		os.Exit(1)
+	}
+
+	connection = glacier.NewConnection(secret, access, region)
+
+	return args[1:]
 }
