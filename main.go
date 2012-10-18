@@ -21,15 +21,15 @@ func main() {
 	flag.Parse()
 
 	if *help {
-		fmt.Println(`glacier <region> archive upload <vault> <file> <description>
+		fmt.Println(`glacier <region> archive upload <vault> <file> [<description>]
 glacier <region> archive delete <vault> <archive>
-glacier <region> job inventory <vault> <topic> <description>
-glacier <region> job archive <vault> <archive> <topic> <description>
+glacier <region> job inventory <vault> [<topic> <description>]
+glacier <region> job archive <vault> <archive> [<topic> <description>]
 glacier <region> job list <vault>
 glacier <region> job describe <vault> <job>
 glacier <region> job get inventory <vault> <job>
 glacier <region> job get archive <vault> <job> <file>
-glacier <region> multipart init <vault> <file> <size> <description>
+glacier <region> multipart init <vault> <file> <size> [<description>]
 glacier <region> multipart print <file>
 glacier <region> multipart run <file> <parts>
 glacier <region> multipart abort <file>
