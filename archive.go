@@ -5,9 +5,6 @@ import (
 	"os"
 )
 
-// $ glacier us-east-1 archive upload <vault> <file> <description>
-// $ glacier us-east-1 archive delete <vault> <archive>
-
 func archive(args []string) {
 	if len(args) < 1 {
 		fmt.Println("no archive command")
@@ -18,6 +15,8 @@ func archive(args []string) {
 
 	switch command {
 	case "upload":
+		args = getConnection(args)
+
 		if len(args) < 2 {
 			fmt.Println("no vault and file")
 			os.Exit(1)
@@ -44,6 +43,8 @@ func archive(args []string) {
 		fmt.Println(location)
 
 	case "delete":
+		args = getConnection(args)
+
 		if len(args) < 2 {
 			fmt.Println("no vault and/or archive")
 			os.Exit(1)

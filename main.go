@@ -21,26 +21,27 @@ func main() {
 	flag.Parse()
 
 	if *help {
-		fmt.Println(`glacier <region> archive upload <vault> <file> [<description>]
-glacier <region> archive delete <vault> <archive>
-glacier <region> job inventory <vault> [<topic> <description>]
-glacier <region> job archive <vault> <archive> [<topic> <description>]
-glacier <region> job list <vault>
-glacier <region> job describe <vault> <job>
-glacier <region> job get inventory <vault> <job>
-glacier <region> job get archive <vault> <job> <file>
-glacier <region> multipart init <vault> <file> <size> [<description>]
-glacier <region> multipart print <file>
-glacier <region> multipart run <file> <parts>
-glacier <region> multipart abort <file>
-glacier <region> multipart list parts <file>
-glacier <region> vault create <name>
-glacier <region> vault delete <name>
-glacier <region> vault describe <name>
-glacier <region> vault list
-glacier <region> vault notifications set <name> <topic>
-glacier <region> vault notifications get <name>
-glacier <region> vault notifications delete <name>`)
+		fmt.Println(`glacier archive upload <region> <vault> <file> [<description>]
+glacier archive delete <region> <vault> <archive>
+glacier job inventory <region> <vault> [<topic> <description>]
+glacier job archive <region> <vault> <archive> [<topic> <description>]
+glacier job list <region> <vault>
+glacier job describe <region> <vault> <job>
+glacier job get inventory <region> <vault> <job>
+glacier job get archive <region> <vault> <job> <file>
+glacier multipart init <region> <vault> <file> <size> [<description>]
+glacier multipart print <file>
+glacier multipart run <file> [<parts>]
+glacier multipart abort <file>
+glacier multipart list parts <file>
+glacier multipart list uploads <vault>
+glacier vault create <region> <vault>
+glacier vault delete <region> <vault>
+glacier vault describe <region> <vault>
+glacier vault list <region>
+glacier vault notifications set <region> <vault> <topic>
+glacier vault notifications get <region> <vault>
+glacier vault notifications delete <region> <vault>`)
 		return
 	}
 
@@ -56,7 +57,6 @@ glacier <region> vault notifications delete <name>`)
 	}
 
 	args := flag.Args()
-	args = getConnection(args)
 
 	if len(args) < 1 {
 		fmt.Println("no command argument")

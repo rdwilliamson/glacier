@@ -6,14 +6,6 @@ import (
 	"os"
 )
 
-// $ glacier us-east-1 vault create <name>
-// $ glacier us-east-1 vault delete <name>
-// $ glacier us-east-1 vault describe <name>
-// $ glacier us-east-1 vault list
-// $ glacier us-east-1 vault notifications set <name> <topic>
-// $ glacier us-east-1 vault notifications get <name>
-// $ glacier us-east-1 vault notifications delete <name>
-
 func vault(args []string) {
 	if len(args) < 1 {
 		fmt.Println("no vault command")
@@ -23,6 +15,8 @@ func vault(args []string) {
 	args = args[1:]
 	switch command {
 	case "create", "delete", "describe":
+		args = getConnection(args)
+
 		if len(args) < 1 {
 			fmt.Println("no vault name")
 			os.Exit(1)
@@ -54,6 +48,8 @@ func vault(args []string) {
 		}
 
 	case "list":
+		args = getConnection(args)
+
 		vaults, _, err := connection.ListVaults("", 0)
 		if err != nil {
 			fmt.Println(err)
@@ -71,11 +67,19 @@ func vault(args []string) {
 		}
 
 	case "notifications":
-		if len(args) < 2 {
-			fmt.Println("no notification command or no vault name")
+		if len(args) < 1 {
+			fmt.Println("no notification command")
 			os.Exit(1)
 		}
 		subCommand := args[0]
+		args = args[1:]
+
+		args = getConnection(args)
+
+		if len(args) < 1 {
+			fmt.Println("no vault name")
+			os.Exit(1)
+		}
 		name := args[1]
 		args = args[2:]
 

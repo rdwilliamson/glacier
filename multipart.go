@@ -3,19 +3,15 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
+	"github.com/rdwilliamson/aws"
 	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"os"
 	"strconv"
 )
 
-// $ glacier us-east-1 multipart init <vault> <file> <size> <description>
-// $ glacier us-east-1 multipart print <file>
-// $ glacier us-east-1 multipart run <file> <parts>
-// $ glacier us-east-1 multipart abort <file>
-// $ glacier us-east-1 multipart list parts <file>
-
 type multipartData struct {
+	Region      string
 	Vault       string
 	Description string
 	PartSize    uint
@@ -70,6 +66,26 @@ func (l *limitedReadSeeker) Seek(offset int64, whence int) (ret int64, err error
 	panic("invalid whence")
 }
 
+func parseRegion(region string) {
+	for _, v := range aws.Regions {
+		if region == v.Region {
+			secret, access := aws.KeysFromEnviroment()
+			if secret == "" || access == "" {
+				fmt.Println("could not get keys")
+				os.Exit(1)
+			}
+
+			connection = glacier.NewConnection(secret, access, v)
+
+			break
+		}
+	}
+	if connection == nil {
+		fmt.Println("error getting region")
+		os.Exit(1)
+	}
+}
+
 func multipart(args []string) {
 	if len(args) < 1 {
 		fmt.Println("no multipart command")
@@ -81,6 +97,9 @@ func multipart(args []string) {
 	switch command {
 	case "init":
 		var data multipartData
+
+		args = getConnection(args)
+		data.Region = connection.Signature.Region.Region
 
 		if len(args) < 3 {
 			fmt.Println("no vault, file name and/or part size")
@@ -174,6 +193,7 @@ func multipart(args []string) {
 			os.Exit(1)
 		}
 
+		fmt.Println("Region:", data.Region)
 		fmt.Println("Vault:", data.Vault)
 		fmt.Println("Description:", data.Description)
 		fmt.Printf("Part Size: %dMiB\n", data.PartSize/1024/1024)
@@ -189,16 +209,21 @@ func multipart(args []string) {
 		fmt.Println("Size:", data.Size, prettySize(data.Size))
 
 	case "run":
-		if len(args) < 2 {
-			fmt.Println("no file and/or parts")
+		if len(args) < 1 {
+			fmt.Println("no file")
 			os.Exit(1)
 		}
 		fileName := args[0]
-		parts64, err := strconv.ParseInt(args[1], 10, 64)
-		parts := int(parts64)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		args = args[1:]
+
+		var parts int
+		if len(args) > 0 {
+			parts64, err := strconv.ParseInt(args[1], 10, 64)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			parts = int(parts64)
 		}
 
 		gobFile, err := os.Open(fileName + ".gob")
@@ -215,6 +240,8 @@ func multipart(args []string) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		parseRegion(data.Region)
 
 		file, err := os.Open(fileName)
 		if err != nil {
@@ -341,6 +368,8 @@ func multipart(args []string) {
 			os.Exit(1)
 		}
 
+		parseRegion(data.Region)
+
 		err = connection.AbortMultipart(data.Vault, data.UploadId)
 		if err != nil {
 			fmt.Println(err)
@@ -383,6 +412,8 @@ func multipart(args []string) {
 				os.Exit(1)
 			}
 
+			parseRegion(data.Region)
+
 			parts, err := connection.ListMultipartParts(data.Vault, data.UploadId, "", 0)
 			if err != nil {
 				fmt.Println(err)
@@ -392,6 +423,8 @@ func multipart(args []string) {
 			fmt.Printf("%+v\n", *parts)
 
 		case "uploads":
+			args = getConnection(args)
+
 			if len(args) < 1 {
 				fmt.Println("no vault")
 				os.Exit(1)

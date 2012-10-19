@@ -6,13 +6,6 @@ import (
 	"os"
 )
 
-// $ glacier us-east-1 job inventory <vault> <topic> <description>
-// $ glacier us-east-1 job archive <vault> <archive> <topic> <description>
-// $ glacier us-east-1 job list <vault>
-// $ glacier us-east-1 job describe <vault> <job>
-// $ glacier us-east-1 job get inventory <vault> <job>
-// $ glacier us-east-1 job get archive <vault> <job> <file>
-
 func job(args []string) {
 	if len(args) < 1 {
 		fmt.Println("no job command")
@@ -23,6 +16,8 @@ func job(args []string) {
 
 	switch command {
 	case "inventory":
+		args = getConnection(args)
+
 		if len(args) < 1 {
 			fmt.Println("no vault")
 			os.Exit(1)
@@ -46,6 +41,8 @@ func job(args []string) {
 		fmt.Println(jobId)
 
 	case "archive":
+		args = getConnection(args)
+
 		if len(args) < 2 {
 			fmt.Println("no vault")
 			os.Exit(1)
@@ -70,6 +67,8 @@ func job(args []string) {
 		fmt.Println(jobId)
 
 	case "list":
+		args = getConnection(args)
+
 		if len(args) < 1 {
 			fmt.Println("no vault")
 			os.Exit(1)
@@ -109,6 +108,8 @@ func job(args []string) {
 		}
 
 	case "describe":
+		args = getConnection(args)
+
 		if len(args) < 2 {
 			fmt.Println("no vault and/or job id")
 			os.Exit(1)
@@ -155,6 +156,8 @@ func job(args []string) {
 
 		switch subCommand {
 		case "inventory":
+			args = getConnection(args)
+
 			if len(args) < 2 {
 				fmt.Println("no vault and/or job id")
 				os.Exit(1)
@@ -182,6 +185,8 @@ func job(args []string) {
 
 		case "archive":
 			// TODO retrieve parts and handle errors
+			args = getConnection(args)
+
 			if len(args) < 3 {
 				fmt.Println("no vault, job id, and/or output file")
 				os.Exit(1)
