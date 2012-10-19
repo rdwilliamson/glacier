@@ -404,7 +404,14 @@ func multipart(args []string) {
 				os.Exit(1)
 			}
 
-			fmt.Printf("%+v\n", parts)
+			for _, v := range parts {
+				fmt.Println("Archive Description:", v.ArchiveDescription)
+				fmt.Println("Creation Data:", v.CreationDate)
+				fmt.Println("Multipart Upload ID:", v.MultipartUploadId)
+				fmt.Println("Part Size:", prettySize(uint64(v.PartSizeInBytes)))
+				fmt.Println("Vault ARN:", v.VaultARN)
+				fmt.Println()
+			}
 
 		default:
 			fmt.Println("unknown multipart sub command:", subCommand)
