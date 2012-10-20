@@ -80,8 +80,8 @@ func vault(args []string) {
 			fmt.Println("no vault name")
 			os.Exit(1)
 		}
-		name := args[1]
-		args = args[2:]
+		name := args[0]
+		args = args[1:]
 
 		switch subCommand {
 		case "set":
