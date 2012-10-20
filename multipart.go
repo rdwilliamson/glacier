@@ -196,7 +196,7 @@ func multipart(args []string) {
 		fmt.Println("Region:", data.Region)
 		fmt.Println("Vault:", data.Vault)
 		fmt.Println("Description:", data.Description)
-		fmt.Printf("Part Size: %dMiB\n", data.PartSize/1024/1024)
+		fmt.Println("Part Size:", prettySize(uint64(data.PartSize)))
 		fmt.Println("Upload ID:", data.UploadId)
 		uploaded := 0
 		for i := range data.Parts {
