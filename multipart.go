@@ -204,7 +204,7 @@ func multipart(args []string) {
 				uploaded++
 			}
 		}
-		fmt.Println("Parts Uploaded", uploaded, "/", len(data.Parts))
+		fmt.Println("Parts Uploaded:", uploaded, "/", len(data.Parts))
 		fmt.Println("Tree Hash:", data.TreeHash)
 		fmt.Println("Size:", data.Size, prettySize(data.Size))
 
