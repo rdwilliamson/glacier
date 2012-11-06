@@ -218,6 +218,111 @@ func job(args []string) {
 			fmt.Println("unknown job sub command:", subCommand)
 			os.Exit(1)
 		}
+
+	case "run":
+		args = getConnection(args)
+		if len(args) < 3 {
+			fmt.Println("no vault, archive, download size and/or output file")
+			os.Exit(1)
+		}
+		vault := args[0]
+		archive := args[1]
+		partSize, err := strconv.ParseUint(args[2], 10, 64)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		output := args[3]
+		args = args[4:]
+
+		var topic string
+		if len(args) > 0 {
+			topic = args[0]
+		}
+		args = args[1:]
+
+		var description string
+		if len(args) > 0 {
+			description = args[0]
+		}
+		args = args[1:]
+
+		// initiate retrieval job
+		jobId, err := connection.InitiateRetrievalJob(vault, archive, topic, description)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		log.Println("initiated retrieval job:", jobId)
+
+		// wait for job to complete, using polling
+		time.Sleep(3 * time.Hour)
+
+		// check status sleeping 15m?
+		try := 0
+		var size uint64
+		var treeHash string
+		for {
+			job, err := connection.DescribeJob(vault, jobId)
+			if err != nil {
+				log.Println(err)
+				try++
+				if try > retries {
+					fmt.Println("too many retries")
+					os.Exit(1)
+				}
+			} else {
+				try = 0
+				if job.Completed {
+					size = uint64(job.InventorySizeInBytes)
+					treeHash = job.SHA256TreeHash
+					break
+				}
+				log.Println("retrieval job not yet completed")
+				time.Sleep(15 * time.Minute)
+			}
+		}
+
+		file, err := os.Create(output)
+		if err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
+		defer file.Close()
+
+		// loop getting parts, checking tree hash of each
+		log.Println("downloading in", prettySize(partSize), "chunks")
+		n := uint64(0)
+
+		for n < size {
+			part, err := connection.GetRetrievalJob(vault, jobId, uint(n), uint(n+partSize))
+			if err != nil {
+				log.Println(err)
+				try++
+				if try > retries {
+					fmt.Println("too many retries")
+					os.Exit(1)
+				}
+				continue
+			}
+			try = 0
+
+			_, err = io.Copy(file, part)
+			if err != nil {
+				log.Println(err)
+				try++
+				if try > retries {
+					fmt.Println("too many retries")
+					os.Exit(1)
+				}
+			}
+
+			// TODO check tree hash
+		}
+
+		// check tree hash of entire archive
+		log.Println(treeHash)
+
 	default:
 		fmt.Println("unknown job command:", command)
 		os.Exit(1)
