@@ -11,11 +11,11 @@ import (
 
 var (
 	connection *glacier.Connection
-	retrys     int
+	retries    int
 )
 
 func main() {
-	flag.IntVar(&retrys, "retrys", 3, "number of retrys when uploading multipart part")
+	flag.IntVar(&retries, "retries", 3, "number of retries when uploading multipart part")
 	cpu := flag.String("cpuprofile", "", "cpu profile file")
 	help := flag.Bool("help", false, "print usage")
 	flag.Parse()

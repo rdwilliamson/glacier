@@ -286,7 +286,7 @@ func multipart(args []string) {
 
 			if err != nil {
 				fmt.Println(err)
-				if try++; try > retrys {
+				if try++; try > retries {
 					fmt.Println("too many retrys")
 					os.Exit(1)
 				}
