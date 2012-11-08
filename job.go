@@ -1,9 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/rdwilliamson/aws/glacier"
 	"io"
+	"log"
 	"os"
+	"strconv"
+	"time"
 )
 
 func job(args []string) {
@@ -184,7 +189,6 @@ func job(args []string) {
 			}
 
 		case "archive":
-			// TODO retrieve parts and handle errors
 			args = getConnection(args)
 
 			if len(args) < 3 {
@@ -202,7 +206,7 @@ func job(args []string) {
 			}
 			defer file.Close()
 
-			archive, err := connection.GetRetrievalJob(vault, job, 0, 0)
+			archive, _, err := connection.GetRetrievalJob(vault, job, 0, 0)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -261,7 +265,7 @@ func job(args []string) {
 		// check status sleeping 15m?
 		try := 0
 		var size uint64
-		var treeHash string
+		var fullTreeHash string
 		for {
 			job, err := connection.DescribeJob(vault, jobId)
 			if err != nil {
@@ -275,7 +279,7 @@ func job(args []string) {
 				try = 0
 				if job.Completed {
 					size = uint64(job.InventorySizeInBytes)
-					treeHash = job.SHA256TreeHash
+					fullTreeHash = job.SHA256TreeHash
 					break
 				}
 				log.Println("retrieval job not yet completed")
@@ -283,7 +287,7 @@ func job(args []string) {
 			}
 		}
 
-		file, err := os.Create(output)
+		file, err := os.OpenFile(output, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 		if err != nil {
 			log.Println(err)
 			os.Exit(1)
@@ -291,11 +295,14 @@ func job(args []string) {
 		defer file.Close()
 
 		// loop getting parts, checking tree hash of each
+		bufferData := make([]byte, 0, partSize)
+		buffer := bytes.NewBuffer(bufferData)
 		log.Println("downloading in", prettySize(partSize), "chunks")
 		n := uint64(0)
+		hasher := glacier.NewTreeHash()
 
 		for n < size {
-			part, err := connection.GetRetrievalJob(vault, jobId, uint(n), uint(n+partSize))
+			part, treeHash, err := connection.GetRetrievalJob(vault, jobId, uint(n), uint(n+partSize))
 			if err != nil {
 				log.Println(err)
 				try++
@@ -305,9 +312,9 @@ func job(args []string) {
 				}
 				continue
 			}
-			try = 0
 
-			_, err = io.Copy(file, part)
+			// copy to temporary buffer
+			_, err = io.Copy(buffer, part)
 			if err != nil {
 				log.Println(err)
 				try++
@@ -315,13 +322,54 @@ func job(args []string) {
 					fmt.Println("too many retries")
 					os.Exit(1)
 				}
+				continue
 			}
 
-			// TODO check tree hash
+			// check tree hash
+			hasher.Write(buffer.Bytes())
+			if treeHash != hasher.TreeHash() {
+				log.Println("tree hash mismatch")
+				try++
+				if try > retries {
+					fmt.Println("too many retries")
+					os.Exit(1)
+				}
+				continue
+			}
+			hasher.Reset()
+
+			// copy to file
+			_, err = file.Write(buffer.Bytes())
+			if err != nil {
+				log.Println("copying buffer to file:", err)
+				try++
+				if try > retries {
+					fmt.Println("too many retries")
+					os.Exit(1)
+				}
+			}
+
+			try = 0
 		}
 
 		// check tree hash of entire archive
-		log.Println(treeHash)
+		log.Println(fullTreeHash)
+		_, err = file.Seek(0, 0)
+		if err != nil {
+			log.Println("seek:", err)
+			os.Exit(1)
+		}
+
+		_, err = io.Copy(hasher, file)
+		if err != nil {
+			log.Println("hashing whole file:", err)
+			os.Exit(1)
+		}
+
+		if hasher.TreeHash() != fullTreeHash {
+			log.Println("entire file tree hash mismatch")
+			os.Exit(1)
+		}
 
 	default:
 		fmt.Println("unknown job command:", command)
