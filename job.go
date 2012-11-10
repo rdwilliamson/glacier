@@ -252,12 +252,12 @@ func job(args []string) {
 		args = args[1:]
 
 		// initiate retrieval job
-		jobId, err := connection.InitiateRetrievalJob(vault, archive, topic, description)
+		job, err := connection.InitiateRetrievalJob(vault, archive, topic, description)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		log.Println("initiated retrieval job:", jobId)
+		log.Println("initiated retrieval job:", job)
 
 		// wait for job to complete, using polling
 		time.Sleep(3 * time.Hour)
@@ -267,7 +267,7 @@ func job(args []string) {
 		var size uint64
 		var fullTreeHash string
 		for {
-			job, err := connection.DescribeJob(vault, jobId)
+			job, err := connection.DescribeJob(vault, job)
 			if err != nil {
 				log.Println(err)
 				try++
@@ -302,7 +302,7 @@ func job(args []string) {
 		hasher := glacier.NewTreeHash()
 
 		for n < size {
-			part, treeHash, err := connection.GetRetrievalJob(vault, jobId, uint(n), uint(n+partSize))
+			part, treeHash, err := connection.GetRetrievalJob(vault, job, n, n+partSize)
 			if err != nil {
 				log.Println(err)
 				try++
