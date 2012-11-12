@@ -105,7 +105,13 @@ func vault(args []string) {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			fmt.Printf("%+v\n", notifications)
+
+			fmt.Printf("Events: ")
+			for _, v := range notifications.Events {
+				fmt.Printf("%s ", v)
+			}
+			fmt.Println()
+			fmt.Println("SNSTopic:", notifications.SNSTopic)
 
 		case "delete":
 			err := connection.DeleteVaultNotifications(name)
