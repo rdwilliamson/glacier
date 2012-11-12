@@ -225,7 +225,7 @@ func job(args []string) {
 
 	case "run":
 		args = getConnection(args)
-		if len(args) < 3 {
+		if len(args) < 4 {
 			fmt.Println("no vault, archive, download size and/or output file")
 			os.Exit(1)
 		}
@@ -236,20 +236,21 @@ func job(args []string) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		partSize *= 1024 * 1024
 		output := args[3]
-		args = args[4:]
+		args = args[3:]
 
 		var topic string
 		if len(args) > 0 {
 			topic = args[0]
+			args = args[1:]
 		}
-		args = args[1:]
 
 		var description string
 		if len(args) > 0 {
 			description = args[0]
+			args = args[1:]
 		}
-		args = args[1:]
 
 		// initiate retrieval job
 		job, err := connection.InitiateRetrievalJob(vault, archive, topic, description)
@@ -278,8 +279,11 @@ func job(args []string) {
 			} else {
 				try = 0
 				if job.Completed {
-					size = uint64(job.InventorySizeInBytes)
+					size = uint64(job.ArchiveSizeInBytes)
 					fullTreeHash = job.SHA256TreeHash
+					log.Println("job completed")
+					log.Println("size:", prettySize(size))
+					log.Println("tree hash:", fullTreeHash)
 					break
 				}
 				log.Println("retrieval job not yet completed")
@@ -287,7 +291,9 @@ func job(args []string) {
 			}
 		}
 
-		file, err := os.OpenFile(output, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+		log.Println("creating file", output)
+
+		file, err := os.OpenFile(output, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if err != nil {
 			log.Println(err)
 			os.Exit(1)
@@ -297,14 +303,15 @@ func job(args []string) {
 		// loop getting parts, checking tree hash of each
 		bufferData := make([]byte, 0, partSize)
 		buffer := bytes.NewBuffer(bufferData)
-		log.Println("downloading in", prettySize(partSize), "chunks")
+		log.Println("downloading in", prettySize(partSize), "chunks,", size/partSize+1, "parts", partSize)
 		n := uint64(0)
 		hasher := glacier.NewTreeHash()
 
 		for n < size {
-			part, treeHash, err := connection.GetRetrievalJob(vault, job, n, n+partSize)
+			log.Println("downloading", n, "to", n+partSize-1)
+			part, treeHash, err := connection.GetRetrievalJob(vault, job, n, n+partSize-1)
 			if err != nil {
-				log.Println(err)
+				log.Println("GetRetrievalJob:", err)
 				try++
 				if try > retries {
 					fmt.Println("too many retries")
@@ -313,10 +320,11 @@ func job(args []string) {
 				continue
 			}
 
+			log.Println("starting download of part")
 			// copy to temporary buffer
-			_, err = io.Copy(buffer, part)
+			nn, err := io.Copy(buffer, part)
 			if err != nil {
-				log.Println(err)
+				log.Println("io.Copy:", err)
 				try++
 				if try > retries {
 					fmt.Println("too many retries")
@@ -324,11 +332,15 @@ func job(args []string) {
 				}
 				continue
 			}
+			log.Println("copied", nn, "bytes to buffer")
 
 			// check tree hash
 			hasher.Write(buffer.Bytes())
+			hasher.Close()
 			if treeHash != hasher.TreeHash() {
 				log.Println("tree hash mismatch")
+				log.Println("wanted", treeHash)
+				log.Println("got", hasher.TreeHash())
 				try++
 				if try > retries {
 					fmt.Println("too many retries")
@@ -336,7 +348,7 @@ func job(args []string) {
 				}
 				continue
 			}
-			hasher.Reset()
+			log.Println("checked tree hash")
 
 			// copy to file
 			_, err = file.Write(buffer.Bytes())
@@ -348,10 +360,15 @@ func job(args []string) {
 					os.Exit(1)
 				}
 			}
+			log.Println("copied to file")
 
+			n += uint64(buffer.Len())
 			try = 0
+			buffer.Reset()
+			hasher.Reset()
 		}
 
+		log.Println("download complete, checking ")
 		// check tree hash of entire archive
 		log.Println(fullTreeHash)
 		_, err = file.Seek(0, 0)
@@ -365,6 +382,7 @@ func job(args []string) {
 			log.Println("hashing whole file:", err)
 			os.Exit(1)
 		}
+		hasher.Close()
 
 		if hasher.TreeHash() != fullTreeHash {
 			log.Println("entire file tree hash mismatch")
