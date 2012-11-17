@@ -269,7 +269,7 @@ func job(args []string) {
 		}
 		partSize *= 1024 * 1024
 		output = args[3]
-		args = args[3:]
+		args = args[4:]
 
 		var topic string
 		if len(args) > 0 {
