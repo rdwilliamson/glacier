@@ -29,6 +29,8 @@ glacier job list <region> <vault>
 glacier job describe <region> <vault> <job>
 glacier job get inventory <region> <vault> <job>
 glacier job get archive <region> <vault> <job> <file>
+glacier job run <region> <vault> <archive> <size> <file> [<topic> <description>]
+glacier job resume <file>
 glacier multipart init <region> <vault> <file> <size> [<description>]
 glacier multipart print <file>
 glacier multipart run <file> [<parts>]

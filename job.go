@@ -397,6 +397,8 @@ func job(args []string) {
 			}
 
 			// check tree hash
+			// TODO only if size is MiB power of two and partial content aligns
+			// on a MiB
 			hasher.Write(buffer.Bytes())
 			hasher.Close()
 			if treeHash != hasher.TreeHash() {
