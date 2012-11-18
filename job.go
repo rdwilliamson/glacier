@@ -448,7 +448,7 @@ func job(args []string) {
 			log.Println("copied to file")
 
 			// save state
-			data.Downloaded += uint64(buffer.Len())
+			data.Downloaded += data.PartSize
 			data.saveState(output + ".gob")
 
 			try = 0
