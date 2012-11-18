@@ -453,6 +453,7 @@ func job(args []string) {
 			os.Exit(1)
 		}
 
+		hasher.Reset()
 		_, err = io.Copy(hasher, file)
 		if err != nil {
 			log.Println("hashing whole file:", err)
@@ -461,7 +462,7 @@ func job(args []string) {
 		hasher.Close()
 
 		if hasher.TreeHash() != data.FullTreeHash {
-			log.Println("entire file tree hash mismatch")
+			log.Println("entire file tree hash mismatch, want", data.FullTreeHash, "got", hasher.TreeHash())
 			os.Exit(1)
 		}
 
