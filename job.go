@@ -346,6 +346,8 @@ func job(args []string) {
 				fmt.Println("could not resume:", err)
 				os.Exit(1)
 			}
+
+			getConnection([]string{data.Region})
 		}
 
 		file, err := os.OpenFile(output, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
