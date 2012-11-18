@@ -333,6 +333,7 @@ func job(args []string) {
 				os.Exit(1)
 			}
 			output = args[0]
+			args = args[1:]
 
 			file, err := os.Open(output + ".gob")
 			if err != nil {
@@ -348,6 +349,16 @@ func job(args []string) {
 			}
 
 			getConnection([]string{data.Region})
+
+			if len(args) > 0 {
+				data.PartSize, err = strconv.ParseUint(args[0], 10, 64)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				data.PartSize *= 1024 * 1024
+				data.saveState(output + ".gob")
+			}
 		}
 
 		file, err := os.OpenFile(output, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
