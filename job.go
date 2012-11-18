@@ -358,7 +358,7 @@ func job(args []string) {
 		defer file.Close()
 
 		// loop getting parts, checking tree hash of each
-		buffer := bytes.NewBuffer(make([]byte, 0, data.PartSize))
+		buffer := bytes.NewBuffer(make([]byte, data.PartSize))
 		var n uint64
 		hasher := glacier.NewTreeHash()
 		var try int
@@ -374,6 +374,8 @@ func job(args []string) {
 
 		for n < data.Size {
 			log.Println("downloading", n, "to", n+data.PartSize-1, "of", data.Size)
+			buffer.Reset()
+			hasher.Reset()
 
 			part, treeHash, err := connection.GetRetrievalJob(data.Vault, data.Job, n, n+data.PartSize-1)
 			if err != nil {
@@ -432,8 +434,6 @@ func job(args []string) {
 
 			n += uint64(buffer.Len())
 			try = 0
-			buffer.Reset()
-			hasher.Reset()
 		}
 
 		// check tree hash of entire archive
