@@ -423,7 +423,7 @@ func job(args []string) {
 			}
 			hasher.Close()
 			if treeHash != "" && treeHash != hasher.TreeHash() {
-				log.Println("tree hash mismatch, want", treeHash, "got", hasher.TreeHash())
+				log.Println("tree hash mismatch")
 				try++
 				if try > retries {
 					fmt.Println("too many retries")
@@ -431,7 +431,6 @@ func job(args []string) {
 				}
 				continue
 			}
-			log.Println("checked tree hash")
 
 			// copy to file
 			_, err = file.Write(buffer.Bytes())
@@ -443,7 +442,6 @@ func job(args []string) {
 					os.Exit(1)
 				}
 			}
-			log.Println("copied to file")
 
 			// save state
 			data.Downloaded += data.PartSize
@@ -469,9 +467,10 @@ func job(args []string) {
 		hasher.Close()
 
 		if hasher.TreeHash() != data.FullTreeHash {
-			log.Println("entire file tree hash mismatch, want", data.FullTreeHash, "got", hasher.TreeHash())
+			log.Println("entire file tree hash mismatch")
 			os.Exit(1)
 		}
+		log.Println("success")
 
 		os.Remove(output + ".gob")
 
