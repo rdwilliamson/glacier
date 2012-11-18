@@ -373,7 +373,7 @@ func job(args []string) {
 		}
 
 		for n < data.Size {
-			log.Println("downloading", n, "to", n+data.PartSize-1)
+			log.Println("downloading", n, "to", n+data.PartSize-1, "of", data.Size)
 
 			part, treeHash, err := connection.GetRetrievalJob(data.Vault, data.Job, n, n+data.PartSize-1)
 			if err != nil {
@@ -404,7 +404,7 @@ func job(args []string) {
 			hasher.Write(buffer.Bytes())
 			hasher.Close()
 			if treeHash != hasher.TreeHash() {
-				log.Println("tree hash mismatch")
+				log.Println("tree hash mismatch, want", treeHash, "got", hasher.TreeHash())
 				try++
 				if try > retries {
 					fmt.Println("too many retries")
