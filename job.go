@@ -414,7 +414,7 @@ func job(args []string) {
 			// TODO only if size is MiB power of two and partial content aligns
 			// on a MiB
 			_, err = io.CopyN(hasher, buffer, int64(data.PartSize))
-			if err != nil {
+			if err != nil && err != io.EOF {
 				log.Println("hashing", err)
 				try++
 				if try > retries {
