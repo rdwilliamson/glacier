@@ -411,8 +411,6 @@ func job(args []string) {
 			}
 
 			// check tree hash
-			// TODO only if size is MiB power of two and partial content aligns
-			// on a MiB
 			_, err = io.CopyN(hasher, buffer, int64(data.PartSize))
 			if err != nil && err != io.EOF {
 				log.Println("hashing", err)
@@ -424,7 +422,7 @@ func job(args []string) {
 				continue
 			}
 			hasher.Close()
-			if treeHash != hasher.TreeHash() {
+			if treeHash != "" && treeHash != hasher.TreeHash() {
 				log.Println("tree hash mismatch, want", treeHash, "got", hasher.TreeHash())
 				try++
 				if try > retries {
