@@ -17,7 +17,7 @@ type retrievalData struct {
 	Vault        string
 	PartSize     uint64
 	Job          string
-	Downloaded   uint
+	Downloaded   uint64
 	Size         uint64
 	FullTreeHash string
 }
@@ -370,25 +370,24 @@ func job(args []string) {
 
 		// loop getting parts, checking tree hash of each
 		buffer := bytes.NewBuffer(make([]byte, data.PartSize))
-		var n uint64
 		hasher := glacier.NewTreeHash()
 		var try int
 
 		if command == "resume" {
-			n = uint64(data.Downloaded) * data.PartSize
-			_, err = file.Seek(int64(n), 0)
+			_, err = file.Seek(int64(data.Downloaded), 0)
 			if err != nil {
 				fmt.Println("could not resume:", err)
 				os.Exit(1)
 			}
 		}
 
-		for n < data.Size {
-			log.Println("downloading", n, "to", n+data.PartSize-1, "of", data.Size)
+		for data.Downloaded < data.Size {
+			log.Println("downloading", data.Downloaded, "to", data.Downloaded+data.PartSize-1, "of", data.Size)
 			buffer.Reset()
 			hasher.Reset()
 
-			part, treeHash, err := connection.GetRetrievalJob(data.Vault, data.Job, n, n+data.PartSize-1)
+			part, treeHash, err := connection.GetRetrievalJob(data.Vault, data.Job, data.Downloaded,
+				data.Downloaded+data.PartSize-1)
 			if err != nil {
 				log.Println("GetRetrievalJob:", err)
 				try++
@@ -440,10 +439,9 @@ func job(args []string) {
 			log.Println("copied to file")
 
 			// save state
-			data.Downloaded++
+			data.Downloaded += uint64(buffer.Len())
 			data.saveState(output + ".gob")
 
-			n += uint64(buffer.Len())
 			try = 0
 		}
 
