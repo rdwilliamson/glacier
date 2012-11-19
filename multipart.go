@@ -171,43 +171,6 @@ func multipart(args []string) {
 			os.Exit(1)
 		}
 
-	case "print":
-		if len(args) < 1 {
-			fmt.Println("no file name")
-			os.Exit(1)
-		}
-		fileName := args[0]
-
-		f, err := os.Open(fileName + ".gob")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer f.Close()
-
-		dec := gob.NewDecoder(f)
-		var data multipartData
-		err = dec.Decode(&data)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		fmt.Println("Region:", data.Region)
-		fmt.Println("Vault:", data.Vault)
-		fmt.Println("Description:", data.Description)
-		fmt.Println("Part Size:", prettySize(uint64(data.PartSize)))
-		fmt.Println("Upload ID:", data.UploadId)
-		uploaded := 0
-		for i := range data.Parts {
-			if data.Parts[i].Uploaded {
-				uploaded++
-			}
-		}
-		fmt.Println("Parts Uploaded:", uploaded, "/", len(data.Parts))
-		fmt.Println("Tree Hash:", data.TreeHash)
-		fmt.Println("Size:", data.Size, prettySize(data.Size))
-
 	case "run":
 		if len(args) < 1 {
 			fmt.Println("no file")
@@ -345,6 +308,43 @@ func multipart(args []string) {
 				fmt.Println(err)
 			}
 		}
+
+	case "print":
+		if len(args) < 1 {
+			fmt.Println("no file name")
+			os.Exit(1)
+		}
+		fileName := args[0]
+
+		f, err := os.Open(fileName + ".gob")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer f.Close()
+
+		dec := gob.NewDecoder(f)
+		var data multipartData
+		err = dec.Decode(&data)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Region:", data.Region)
+		fmt.Println("Vault:", data.Vault)
+		fmt.Println("Description:", data.Description)
+		fmt.Println("Part Size:", prettySize(uint64(data.PartSize)))
+		fmt.Println("Upload ID:", data.UploadId)
+		uploaded := 0
+		for i := range data.Parts {
+			if data.Parts[i].Uploaded {
+				uploaded++
+			}
+		}
+		fmt.Println("Parts Uploaded:", uploaded, "/", len(data.Parts))
+		fmt.Println("Tree Hash:", data.TreeHash)
+		fmt.Println("Size:", data.Size, prettySize(data.Size))
 
 	case "abort":
 		if len(args) < 1 {
