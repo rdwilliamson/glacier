@@ -120,6 +120,7 @@ func getConnection(args []string) []string {
 	}
 
 	connection = glacier.NewConnection(secret, access, region)
+	connection.Signature.NewKeys = aws.KeysFromEnviroment
 
 	return args[1:]
 }
