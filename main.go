@@ -32,8 +32,9 @@ glacier job get archive <region> <vault> <job> <file>
 glacier job run <region> <vault> <archive> <size> <file> [<topic> <description>]
 glacier job resume <file>
 glacier multipart init <region> <vault> <file> <size> [<description>]
+glacier multipart run <region> <vault> <file> <size> [<description>]
 glacier multipart print <file>
-glacier multipart run <file> [<parts>]
+glacier multipart resume <file> [<parts>]
 glacier multipart abort <file>
 glacier multipart list parts <file>
 glacier multipart list uploads <vault>

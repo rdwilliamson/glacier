@@ -46,6 +46,10 @@ func (l *limitedReadSeeker) Read(p []byte) (n int, err error) {
 	return
 }
 
+var (
+	uploadData multipartData
+)
+
 func (l *limitedReadSeeker) Seek(offset int64, whence int) (ret int64, err error) {
 	switch whence {
 	case 0:
@@ -95,31 +99,29 @@ func multipart(args []string) {
 	args = args[1:]
 
 	switch command {
-	case "init":
-		var data multipartData
-
+	case "init", "run":
 		args = getConnection(args)
-		data.Region = connection.Signature.Region.Region
+		uploadData.Region = connection.Signature.Region.Region
 
 		if len(args) < 3 {
 			fmt.Println("no vault, file name and/or part size")
 			os.Exit(1)
 		}
-		data.Vault = args[0]
-		data.FileName = args[1]
+		uploadData.Vault = args[0]
+		uploadData.FileName = args[1]
 		partSize, err := strconv.ParseUint(args[2], 10, 32)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		data.PartSize = uint(partSize) * 1024 * 1024
+		uploadData.PartSize = uint(partSize) * 1024 * 1024
 		args = args[3:]
 
 		if len(args) > 0 {
-			data.Description = args[0]
+			uploadData.Description = args[0]
 		}
 
-		f, err := os.Open(data.FileName)
+		f, err := os.Open(uploadData.FileName)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -127,86 +129,93 @@ func multipart(args []string) {
 		defer f.Close()
 
 		s, _ := f.Stat()
-		parts := s.Size() / int64(data.PartSize)
-		if s.Size()%int64(data.PartSize) > 0 {
+		parts := s.Size() / int64(uploadData.PartSize)
+		if s.Size()%int64(uploadData.PartSize) > 0 {
 			parts++
 		}
-		data.Parts = make([]multipartPart, parts)
+		uploadData.Parts = make([]multipartPart, parts)
 
 		partHasher := glacier.NewTreeHash()
 		wholeHasher := glacier.NewTreeHash()
 		hasher := io.MultiWriter(partHasher, wholeHasher)
-		for i := range data.Parts {
-			n, err := io.CopyN(hasher, f, int64(data.PartSize))
+		for i := range uploadData.Parts {
+			n, err := io.CopyN(hasher, f, int64(uploadData.PartSize))
 			if err != nil && err != io.EOF {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			data.Size += uint64(n)
+			uploadData.Size += uint64(n)
 			partHasher.Close()
-			data.Parts[i].Hash = partHasher.Hash()
-			data.Parts[i].TreeHash = partHasher.TreeHash()
+			uploadData.Parts[i].Hash = partHasher.Hash()
+			uploadData.Parts[i].TreeHash = partHasher.TreeHash()
 			partHasher.Reset()
 		}
 		wholeHasher.Close()
-		data.TreeHash = wholeHasher.TreeHash()
+		uploadData.TreeHash = wholeHasher.TreeHash()
 
-		data.UploadId, err = connection.InitiateMultipart(data.Vault, data.PartSize, data.Description)
+		uploadData.UploadId, err = connection.InitiateMultipart(uploadData.Vault, uploadData.PartSize, uploadData.Description)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		out, err := os.Create(data.FileName + ".gob")
+		out, err := os.Create(uploadData.FileName + ".gob")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		defer out.Close()
 
 		enc := gob.NewEncoder(out)
-		err = enc.Encode(data)
+		err = enc.Encode(uploadData)
+		out.Close()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-	case "run":
-		if len(args) < 1 {
-			fmt.Println("no file")
-			os.Exit(1)
+		if command == "init" {
+			return
 		}
-		fileName := args[0]
-		args = args[1:]
 
+		fallthrough
+
+	case "resume":
 		var parts int
-		if len(args) > 0 {
-			parts64, err := strconv.ParseInt(args[1], 10, 64)
+		if command == "resume" {
+			if len(args) < 1 {
+				fmt.Println("no file")
+				os.Exit(1)
+			}
+			fileName := args[0]
+			args = args[1:]
+
+			if len(args) > 0 {
+				parts64, err := strconv.ParseInt(args[1], 10, 64)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				parts = int(parts64)
+			}
+
+			gobFile, err := os.Open(fileName + ".gob")
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			parts = int(parts64)
+
+			dec := gob.NewDecoder(gobFile)
+			err = dec.Decode(&uploadData)
+			gobFile.Close()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			parseRegion(uploadData.Region)
 		}
 
-		gobFile, err := os.Open(fileName + ".gob")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		dec := gob.NewDecoder(gobFile)
-		var data multipartData
-		err = dec.Decode(&data)
-		gobFile.Close()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		parseRegion(data.Region)
-
-		file, err := os.Open(fileName)
+		file, err := os.Open(uploadData.FileName)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -215,37 +224,37 @@ func multipart(args []string) {
 
 		start := uint64(0)
 		index := 0
-		for _, v := range data.Parts {
+		for _, v := range uploadData.Parts {
 			if v.Uploaded {
-				start += uint64(data.PartSize)
+				start += uint64(uploadData.PartSize)
 				index++
 			} else {
 				break
 			}
 		}
 
-		if len(data.Parts) < parts {
-			parts = len(data.Parts)
+		if len(uploadData.Parts) < parts {
+			parts = len(uploadData.Parts)
 		}
 		if parts == 0 {
-			parts = len(data.Parts)
+			parts = len(uploadData.Parts)
 		}
 
 		i, try := 0, 0
 		for i < parts {
-			if index >= len(data.Parts) {
+			if index >= len(uploadData.Parts) {
 				break
 			}
 
-			_, err = file.Seek(int64(start), 0)
+			_, err := file.Seek(int64(start), 0)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 
-			body := &limitedReadSeeker{file, int64(data.PartSize), int64(data.PartSize)}
+			body := &limitedReadSeeker{file, int64(uploadData.PartSize), int64(uploadData.PartSize)}
 
-			err = connection.UploadMultipart(data.Vault, data.UploadId, start, body)
+			err = connection.UploadMultipart(uploadData.Vault, uploadData.UploadId, start, body)
 
 			if err != nil {
 				fmt.Println(err)
@@ -259,36 +268,36 @@ func multipart(args []string) {
 			i++
 			try = 0
 
-			data.Parts[index].Uploaded = true
-			gobFile, err = os.Create(fileName + ".gob.new")
+			uploadData.Parts[index].Uploaded = true
+			gobFile, err := os.Create(uploadData.FileName + ".gob.new")
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 			enc := gob.NewEncoder(gobFile)
-			err = enc.Encode(data)
+			err = enc.Encode(uploadData)
 			gobFile.Close()
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			err = os.Remove(fileName + ".gob")
+			err = os.Remove(uploadData.FileName + ".gob")
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			err = os.Rename(fileName+".gob.new", fileName+".gob")
+			err = os.Rename(uploadData.FileName+".gob.new", uploadData.FileName+".gob")
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 
-			start += uint64(data.PartSize)
+			start += uint64(uploadData.PartSize)
 			index++
 		}
 
 		done := true
-		for _, v := range data.Parts {
+		for _, v := range uploadData.Parts {
 			if !v.Uploaded {
 				done = false
 				break
@@ -296,14 +305,14 @@ func multipart(args []string) {
 		}
 
 		if done {
-			archiveId, err := connection.CompleteMultipart(data.Vault, data.UploadId, data.TreeHash, data.Size)
+			archiveId, err := connection.CompleteMultipart(uploadData.Vault, uploadData.UploadId, uploadData.TreeHash, uploadData.Size)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 			fmt.Println(archiveId)
 
-			err = os.Remove(fileName + ".gob")
+			err = os.Remove(uploadData.FileName + ".gob")
 			if err != nil {
 				fmt.Println(err)
 			}
