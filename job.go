@@ -422,7 +422,7 @@ func job(args []string) {
 				continue
 			}
 			hasher.Close()
-			if treeHash != "" && treeHash != hasher.TreeHash() {
+			if treeHash != "" && treeHash != string(toHex(hasher.TreeHash())) {
 				log.Println("tree hash mismatch")
 				try++
 				if try > retries {
@@ -466,7 +466,7 @@ func job(args []string) {
 		}
 		hasher.Close()
 
-		if hasher.TreeHash() != data.FullTreeHash {
+		if string(toHex(hasher.TreeHash())) != data.FullTreeHash {
 			log.Println("entire file tree hash mismatch")
 			os.Exit(1)
 		}

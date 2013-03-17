@@ -146,12 +146,12 @@ func multipart(args []string) {
 			}
 			uploadData.Size += uint64(n)
 			partHasher.Close()
-			uploadData.Parts[i].Hash = partHasher.Hash()
-			uploadData.Parts[i].TreeHash = partHasher.TreeHash()
+			uploadData.Parts[i].Hash = string(toHex(partHasher.Hash()))
+			uploadData.Parts[i].TreeHash = string(toHex(partHasher.TreeHash()))
 			partHasher.Reset()
 		}
 		wholeHasher.Close()
-		uploadData.TreeHash = wholeHasher.TreeHash()
+		uploadData.TreeHash = string(toHex(wholeHasher.TreeHash()))
 
 		uploadData.UploadId, err = connection.InitiateMultipart(uploadData.Vault, uploadData.PartSize, uploadData.Description)
 		if err != nil {

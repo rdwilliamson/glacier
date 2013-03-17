@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"github.com/rdwilliamson/aws"
@@ -123,4 +124,10 @@ func getConnection(args []string) []string {
 	connection.Signature.NewKeys = aws.KeysFromEnviroment
 
 	return args[1:]
+}
+
+func toHex(x []byte) []byte {
+	z := make([]byte, 2*len(x))
+	hex.Encode(z, x)
+	return z
 }
