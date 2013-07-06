@@ -29,31 +29,31 @@ func main() {
 	flag.Parse()
 
 	if *help {
-		fmt.Println(`glacier archive upload <region> <vault> <file> [<description>]
-glacier archive delete <region> <vault> <archive>
-glacier job inventory <region> <vault> [<topic> <description>]
-glacier job archive <region> <vault> <archive> [<topic> <description>]
-glacier job list <region> <vault>
-glacier job describe <region> <vault> <job>
-glacier job get inventory <region> <vault> <job>
-glacier job get archive <region> <vault> <job> <file>
-glacier job run <region> <vault> <archive> <size> <file> [<topic> <description>]
-glacier job resume <file>
-glacier multipart init <region> <vault> <file> <size> [<description>]
-glacier multipart run <region> <vault> <file> <size> [<description>]
-glacier multipart print <file>
-glacier multipart resume <file> [<parts>]
-glacier multipart abort <file>
-glacier multipart list parts <file>
-glacier multipart list uploads <vault>
-glacier vault create <region> <vault>
-glacier vault delete <region> <vault>
-glacier vault describe <region> <vault>
-glacier vault list <region>
-glacier vault notifications set <region> <vault> <topic>
-glacier vault notifications get <region> <vault>
-glacier vault notifications delete <region> <vault>
-glacier treehash <file> [<file> ...]`)
+		fmt.Println(`glacier archive upload region vault file [description]
+glacier archive delete region vault archive
+glacier job inventory region vault [topic description]
+glacier job archive region vault archive [topic description]
+glacier job list region vault
+glacier job describe region vault job
+glacier job get inventory region vault job
+glacier job get archive region vault job file
+glacier job run region vault archive size file [topic description]
+glacier job resume file
+glacier multipart init region vault file size [description]
+glacier multipart run region vault file size [description]
+glacier multipart print file
+glacier multipart resume file [parts]
+glacier multipart abort file
+glacier multipart list parts file
+glacier multipart list uploads vault
+glacier vault create region vault
+glacier vault delete region vault
+glacier vault describe region vault
+glacier vault list region
+glacier vault notifications set region vault topic
+glacier vault notifications get region vault
+glacier vault notifications delete region vault
+glacier treehash files...`)
 		return
 	}
 
