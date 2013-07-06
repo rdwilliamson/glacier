@@ -13,10 +13,16 @@ import (
 var (
 	connection *glacier.Connection
 	retries    int
+	secret     string
+	access     string
+	keyFile    string
 )
 
 func main() {
 	flag.IntVar(&retries, "retries", 3, "number of retries when uploading multipart part")
+	flag.StringVar(&secret, "secret", "", "secret key")
+	flag.StringVar(&access, "access", "", "access key")
+	flag.StringVar(&keyFile, "keys", "", "location of a file containing access keys")
 	cpu := flag.String("cpuprofile", "", "cpu profile file")
 	help := flag.Bool("help", false, "print usage")
 	flag.Parse()
@@ -96,9 +102,22 @@ func prettySize(size uint64) string {
 	return fmt.Sprint(size)
 }
 
+func getKeys() (string, string) {
+	if secret != "" && access != "" {
+		return secret, access
+	}
+	if keyFile != "" {
+		var err error
+		secret, access, err = aws.KeysFromFile(keyFile)
+		if err == nil {
+			return secret, access
+		}
+	}
+	return aws.KeysFromEnviroment()
+}
+
 func getConnection(args []string) []string {
-	// TODO other ways to supply them
-	secret, access := aws.KeysFromEnviroment()
+	secret, access = getKeys()
 	if secret == "" || access == "" {
 		fmt.Println("could not get keys")
 		os.Exit(1)
