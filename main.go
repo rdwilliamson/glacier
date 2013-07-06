@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/rdwilliamson/aws"
 	"github.com/rdwilliamson/aws/glacier"
+	"io"
 	"os"
 	"runtime/pprof"
 )
@@ -51,7 +52,8 @@ glacier vault describe <region> <vault>
 glacier vault list <region>
 glacier vault notifications set <region> <vault> <topic>
 glacier vault notifications get <region> <vault>
-glacier vault notifications delete <region> <vault>`)
+glacier vault notifications delete <region> <vault>
+glacier treehash <file> [<file> ...]`)
 		return
 	}
 
@@ -84,6 +86,8 @@ glacier vault notifications delete <region> <vault>`)
 		multipart(args)
 	case "job":
 		job(args)
+	case "treehash":
+		treehash(args)
 	default:
 		fmt.Println("unknown command:", command)
 	}
@@ -149,4 +153,27 @@ func toHex(x []byte) []byte {
 	z := make([]byte, 2*len(x))
 	hex.Encode(z, x)
 	return z
+}
+
+func treehash(files []string) {
+	th := glacier.NewTreeHash()
+
+	for _, v := range files {
+		th.Reset()
+
+		file, err := os.Open(v)
+		if err != nil {
+			fmt.Printf("%s: %v\n", v, err)
+			continue
+		}
+
+		_, err = io.Copy(th, file)
+		if err != nil {
+			file.Close()
+			fmt.Printf("%s: %v\n", v, err)
+			continue
+		}
+
+		fmt.Println(string(toHex(th.Hash())), v)
+	}
 }
