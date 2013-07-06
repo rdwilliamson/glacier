@@ -1,4 +1,4 @@
-# Command line client for Amazon Web Services Glacier.
+# Command line client for Amazon Glacier.
 
 ## Basic usage
 
@@ -24,5 +24,5 @@ Initiate a download job, returns job id, and retrieve it once it's complete:
 `glacier job archive us-east-1 testvault archiveid snstopic "Descripiton of retrieval job"`
 `glacier job get archive us-east-1 testvault jobid file.zip`
 
-Downloading a large file in 64 MiB parts. It will initiate the retrieval job, wait and periodically poll to see if the retrieval is complete, and then download the file.
+Downloading a large file in 64 MiB parts by initiating the retrieval job, waiting and periodically poll to see if the retrieval is complete, and then download the file:
 `glacier job run us-east-1 testvault archiveid 64 file.zip`
