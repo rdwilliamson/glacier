@@ -60,7 +60,7 @@ func vault(args []string) {
 			fmt.Println("Vault Name:", v.VaultName)
 			fmt.Println("Vault ARN:", v.VaultARN)
 			fmt.Println("Creation Date:", v.CreationDate)
-			fmt.Println("Archives;", v.NumberOfArchives)
+			fmt.Println("Archives:", v.NumberOfArchives)
 			fmt.Println("Size:", v.SizeInBytes, prettySize(v.SizeInBytes))
 			fmt.Println("Last Inventory Date:", v.LastInventoryDate)
 			fmt.Println()
