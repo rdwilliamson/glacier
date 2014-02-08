@@ -4,11 +4,12 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"github.com/rdwilliamson/aws"
-	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"os"
 	"runtime/pprof"
+
+	"github.com/rdwilliamson/aws"
+	"github.com/rdwilliamson/aws/glacier"
 )
 
 var (
@@ -93,7 +94,7 @@ glacier treehash files...`)
 	}
 }
 
-func prettySize(size uint64) string {
+func prettySize(size int64) string {
 	if size >= 1024*1024*1024 {
 		return fmt.Sprintf("%.1f GiB", float32(size)/1024.0/1024.0/1024.0)
 	}

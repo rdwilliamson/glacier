@@ -4,21 +4,22 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/rdwilliamson/aws/glacier"
 )
 
 type retrievalData struct {
 	Region       string
 	Vault        string
-	PartSize     uint64
+	PartSize     int64
 	Job          string
-	Downloaded   uint64
-	Size         uint64
+	Downloaded   int64
+	Size         int64
 	FullTreeHash string
 }
 
@@ -129,7 +130,7 @@ func job(args []string) {
 			}
 			fmt.Println("Creation Date:", v.CreationDate)
 			if v.Completed && v.Action == "InventoryRetrieval" {
-				fmt.Println("Invenotry Size:", v.InventorySizeInBytes, prettySize(uint64(v.InventorySizeInBytes)))
+				fmt.Println("Invenotry Size:", v.InventorySizeInBytes, prettySize(int64(v.InventorySizeInBytes)))
 			}
 			fmt.Println("Job Description:", v.JobDescription)
 			fmt.Println("Job ID:", v.JobId)
@@ -170,7 +171,7 @@ func job(args []string) {
 		}
 		fmt.Println("Creation Date:", job.CreationDate)
 		if job.Completed && job.Action == "InventoryRetrieval" {
-			fmt.Println("Invenotry Size:", job.InventorySizeInBytes, prettySize(uint64(job.InventorySizeInBytes)))
+			fmt.Println("Invenotry Size:", job.InventorySizeInBytes, prettySize(int64(job.InventorySizeInBytes)))
 		}
 		fmt.Println("Job Description:", job.JobDescription)
 		fmt.Println("Job ID:", job.JobId)
@@ -262,7 +263,7 @@ func job(args []string) {
 		}
 		vault := args[0]
 		archive := args[1]
-		partSize, err := strconv.ParseUint(args[2], 10, 64)
+		partSize, err := strconv.ParseInt(args[2], 10, 64)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -315,7 +316,7 @@ func job(args []string) {
 			} else {
 				try = 0
 				if job.Completed {
-					data.Size = uint64(job.ArchiveSizeInBytes)
+					data.Size = int64(job.ArchiveSizeInBytes)
 					data.FullTreeHash = job.SHA256TreeHash
 					data.saveState(output + ".gob")
 					break
@@ -351,7 +352,7 @@ func job(args []string) {
 			getConnection([]string{data.Region})
 
 			if len(args) > 0 {
-				data.PartSize, err = strconv.ParseUint(args[0], 10, 64)
+				data.PartSize, err = strconv.ParseInt(args[0], 10, 64)
 				if err != nil {
 					fmt.Println(err)
 					os.Exit(1)

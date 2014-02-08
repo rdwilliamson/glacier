@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/rdwilliamson/aws/glacier"
 	"os"
+
+	"github.com/rdwilliamson/aws/glacier"
 )
 
 func vault(args []string) {

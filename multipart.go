@@ -3,23 +3,24 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/rdwilliamson/aws"
-	"github.com/rdwilliamson/aws/glacier"
 	"io"
 	"os"
 	"strconv"
+
+	"github.com/rdwilliamson/aws"
+	"github.com/rdwilliamson/aws/glacier"
 )
 
 type multipartData struct {
 	Region      string
 	Vault       string
 	Description string
-	PartSize    uint
+	PartSize    int64
 	FileName    string
 	UploadId    string
 	Parts       []multipartPart
 	TreeHash    string
-	Size        uint64
+	Size        int64
 }
 
 type multipartPart struct {
@@ -109,12 +110,12 @@ func multipart(args []string) {
 		}
 		uploadData.Vault = args[0]
 		uploadData.FileName = args[1]
-		partSize, err := strconv.ParseUint(args[2], 10, 32)
+		partSize, err := strconv.ParseInt(args[2], 10, 64)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		uploadData.PartSize = uint(partSize) * 1024 * 1024
+		uploadData.PartSize = partSize * 1024 * 1024
 		args = args[3:]
 
 		if len(args) > 0 {
@@ -129,8 +130,8 @@ func multipart(args []string) {
 		defer f.Close()
 
 		s, _ := f.Stat()
-		parts := s.Size() / int64(uploadData.PartSize)
-		if s.Size()%int64(uploadData.PartSize) > 0 {
+		parts := s.Size() / uploadData.PartSize
+		if s.Size()%uploadData.PartSize > 0 {
 			parts++
 		}
 		uploadData.Parts = make([]multipartPart, parts)
@@ -139,12 +140,12 @@ func multipart(args []string) {
 		wholeHasher := glacier.NewTreeHash()
 		hasher := io.MultiWriter(partHasher, wholeHasher)
 		for i := range uploadData.Parts {
-			n, err := io.CopyN(hasher, f, int64(uploadData.PartSize))
+			n, err := io.CopyN(hasher, f, uploadData.PartSize)
 			if err != nil && err != io.EOF {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			uploadData.Size += uint64(n)
+			uploadData.Size += n
 			partHasher.Close()
 			uploadData.Parts[i].Hash = string(toHex(partHasher.Hash()))
 			uploadData.Parts[i].TreeHash = string(toHex(partHasher.TreeHash()))
@@ -153,7 +154,8 @@ func multipart(args []string) {
 		wholeHasher.Close()
 		uploadData.TreeHash = string(toHex(wholeHasher.TreeHash()))
 
-		uploadData.UploadId, err = connection.InitiateMultipart(uploadData.Vault, uploadData.PartSize, uploadData.Description)
+		uploadData.UploadId, err = connection.InitiateMultipart(uploadData.Vault, uploadData.PartSize,
+			uploadData.Description)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -222,11 +224,11 @@ func multipart(args []string) {
 		}
 		defer file.Close()
 
-		start := uint64(0)
+		var start int64
 		index := 0
 		for _, v := range uploadData.Parts {
 			if v.Uploaded {
-				start += uint64(uploadData.PartSize)
+				start += uploadData.PartSize
 				index++
 			} else {
 				break
@@ -246,13 +248,13 @@ func multipart(args []string) {
 				break
 			}
 
-			_, err := file.Seek(int64(start), 0)
+			_, err := file.Seek(start, 0)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 
-			body := &limitedReadSeeker{file, int64(uploadData.PartSize), int64(uploadData.PartSize)}
+			body := &limitedReadSeeker{file, uploadData.PartSize, uploadData.PartSize}
 
 			err = connection.UploadMultipart(uploadData.Vault, uploadData.UploadId, start, body)
 
@@ -292,7 +294,7 @@ func multipart(args []string) {
 				os.Exit(1)
 			}
 
-			start += uint64(uploadData.PartSize)
+			start += uploadData.PartSize
 			index++
 		}
 
@@ -305,7 +307,8 @@ func multipart(args []string) {
 		}
 
 		if done {
-			archiveId, err := connection.CompleteMultipart(uploadData.Vault, uploadData.UploadId, uploadData.TreeHash, uploadData.Size)
+			archiveId, err := connection.CompleteMultipart(uploadData.Vault, uploadData.UploadId, uploadData.TreeHash,
+				uploadData.Size)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -343,7 +346,7 @@ func multipart(args []string) {
 		fmt.Println("Region:", data.Region)
 		fmt.Println("Vault:", data.Vault)
 		fmt.Println("Description:", data.Description)
-		fmt.Println("Part Size:", prettySize(uint64(data.PartSize)))
+		fmt.Println("Part Size:", prettySize(data.PartSize))
 		fmt.Println("Upload ID:", data.UploadId)
 		uploaded := 0
 		for i := range data.Parts {
@@ -450,7 +453,7 @@ func multipart(args []string) {
 				fmt.Println("Archive Description:", v.ArchiveDescription)
 				fmt.Println("Creation Data:", v.CreationDate)
 				fmt.Println("Multipart Upload ID:", v.MultipartUploadId)
-				fmt.Println("Part Size:", prettySize(uint64(v.PartSizeInBytes)))
+				fmt.Println("Part Size:", prettySize(v.PartSizeInBytes))
 				fmt.Println("Vault ARN:", v.VaultARN)
 				fmt.Println()
 			}
