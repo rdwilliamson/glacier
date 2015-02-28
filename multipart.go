@@ -192,7 +192,7 @@ func multipart(args []string) {
 			args = args[1:]
 
 			if len(args) > 0 {
-				parts64, err := strconv.ParseInt(args[1], 10, 64)
+				parts64, err := strconv.ParseInt(args[0], 10, 64)
 				if err != nil {
 					fmt.Println(err)
 					os.Exit(1)
