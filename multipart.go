@@ -74,14 +74,7 @@ func (l *limitedReadSeeker) Seek(offset int64, whence int) (ret int64, err error
 func parseRegion(region string) {
 	for _, v := range aws.Regions {
 		if region == v.Region {
-			secret, access := aws.KeysFromEnviroment()
-			if secret == "" || access == "" {
-				fmt.Println("could not get keys")
-				os.Exit(1)
-			}
-
-			connection = glacier.NewConnection(secret, access, v)
-
+			getConnection([]string{v.Name})
 			break
 		}
 	}
