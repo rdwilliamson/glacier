@@ -175,6 +175,7 @@ func treehash(files []string) {
 			continue
 		}
 
-		fmt.Println(string(toHex(th.Hash())), v)
+		th.Close()
+		fmt.Println(string(toHex(th.TreeHash())), v)
 	}
 }
