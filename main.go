@@ -46,7 +46,7 @@ glacier multipart print file
 glacier multipart resume file [parts]
 glacier multipart abort file
 glacier multipart list parts file
-glacier multipart list uploads vault
+glacier multipart list uploads region vault
 glacier vault create region vault
 glacier vault delete region vault
 glacier vault describe region vault
