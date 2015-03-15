@@ -54,6 +54,8 @@ glacier vault list region
 glacier vault notifications set region vault topic
 glacier vault notifications get region vault
 glacier vault notifications delete region vault
+glacier policy data-retrieval set region strategy [bytesperhour]
+glacier policy data-retrieval get region
 glacier treehash files...`)
 		return
 	}
@@ -89,6 +91,8 @@ glacier treehash files...`)
 		job(args)
 	case "treehash":
 		treehash(args)
+	case "policy":
+		policy(args)
 	default:
 		fmt.Println("unknown command:", command)
 	}
